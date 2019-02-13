@@ -1,0 +1,637 @@
+{
+  "id": 7,
+  "rack": "B",
+  "logDirs": [
+    {
+      "path": "/data/topics",
+      "diskFree": 503984472064,
+      "diskTotal": 1082125373440,
+      "topics": [
+        {
+          "name": "__consumer_offsets",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 7,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 23027726,
+              "logSize": 2054974,
+              "beginningOffset": 0,
+              "endOffset": 262491,
+              "recordCount": 262491
+            },
+            {
+              "partition": 29,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 20985445,
+              "logSize": 13780,
+              "beginningOffset": 0,
+              "endOffset": 25943397,
+              "recordCount": 25943397
+            },
+            {
+              "partition": 6,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 21024452,
+              "logSize": 52602,
+              "beginningOffset": 0,
+              "endOffset": 2449508,
+              "recordCount": 2449508
+            }
+          ]
+        },
+        {
+          "name": "road.alpha_charlie_charlie_uniform_alpha_sierra_hotel",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 1,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 20971516,
+              "logSize": 0,
+              "beginningOffset": 0,
+              "endOffset": 0,
+              "recordCount": 0
+            }
+          ]
+        },
+        {
+          "name": "road.alpha_charlie_india_bravo",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 1,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 10723662997,
+              "logSize": 10659199816,
+              "beginningOffset": 507713004,
+              "endOffset": 567607896,
+              "recordCount": 59894892
+            }
+          ]
+        },
+        {
+          "name": "road.alpha_charlie_lima_mike_hotel",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 3,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 20971516,
+              "logSize": 0,
+              "beginningOffset": 0,
+              "endOffset": 0,
+              "recordCount": 0
+            },
+            {
+              "partition": 4,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 20971516,
+              "logSize": 0,
+              "beginningOffset": 0,
+              "endOffset": 0,
+              "recordCount": 0
+            }
+          ]
+        },
+        {
+          "name": "road.alpha_charlie_mike_zulu_sierra",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 3,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 20971516,
+              "logSize": 0,
+              "beginningOffset": 0,
+              "endOffset": 0,
+              "recordCount": 0
+            }
+          ]
+        },
+        {
+          "name": "road.alpha_charlie_papa_sierra_hotel",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 3,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 20971516,
+              "logSize": 0,
+              "beginningOffset": 0,
+              "endOffset": 0,
+              "recordCount": 0
+            },
+            {
+              "partition": 2,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 20971516,
+              "logSize": 0,
+              "beginningOffset": 0,
+              "endOffset": 0,
+              "recordCount": 0
+            }
+          ]
+        },
+        {
+          "name": "road.alpha_charlie_papa_alpha_sierra",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 4,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 2122851301,
+              "logSize": 2092362304,
+              "beginningOffset": 177405434,
+              "endOffset": 187482471,
+              "recordCount": 10077037
+            }
+          ]
+        },
+        {
+          "name": "road.alpha_charlie_sierra_sierra_quebec_charlie",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 0,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 20971516,
+              "logSize": 0,
+              "beginningOffset": 0,
+              "endOffset": 0,
+              "recordCount": 0
+            }
+          ]
+        },
+        {
+          "name": "road.alpha_charlie_sierra_papa_charlie_tango_romeo",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 3,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 20971516,
+              "logSize": 0,
+              "beginningOffset": 0,
+              "endOffset": 0,
+              "recordCount": 0
+            }
+          ]
+        },
+        {
+          "name": "road.alpha_charlie_sierra_papa_romeo_quebec_charlie",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 3,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 20971520,
+              "logSize": 0,
+              "beginningOffset": 1633482,
+              "endOffset": 1633482,
+              "recordCount": 0
+            },
+            {
+              "partition": 2,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 20971520,
+              "logSize": 0,
+              "beginningOffset": 1634510,
+              "endOffset": 1634510,
+              "recordCount": 0
+            }
+          ]
+        },
+        {
+          "name": "road.alpha_oscar_oscar_mike",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 2,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 20971520,
+              "logSize": 0,
+              "beginningOffset": 5,
+              "endOffset": 5,
+              "recordCount": 0
+            },
+            {
+              "partition": 3,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 20971520,
+              "logSize": 0,
+              "beginningOffset": 9,
+              "endOffset": 9,
+              "recordCount": 0
+            }
+          ]
+        },
+        {
+          "name": "road.alpha_india_tango",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 1,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 94637550911,
+              "logSize": 94247738681,
+              "beginningOffset": 491513786,
+              "endOffset": 549367797,
+              "recordCount": 57854011
+            }
+          ]
+        },
+        {
+          "name": "road.delta_lima",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 10,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 3158397895,
+              "logSize": 3127183406,
+              "beginningOffset": 356512461,
+              "endOffset": 379011352,
+              "recordCount": 22498891
+            },
+            {
+              "partition": 12,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 3154297100,
+              "logSize": 3123918671,
+              "beginningOffset": 356536712,
+              "endOffset": 379025809,
+              "recordCount": 22489097
+            },
+            {
+              "partition": 14,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 3154779506,
+              "logSize": 3124481821,
+              "beginningOffset": 356465887,
+              "endOffset": 378955990,
+              "recordCount": 22490103
+            }
+          ]
+        },
+        {
+          "name": "road.hotel_delta_sierra_charlie_echo",
+          "retention": "PT24H",
+          "partitionReplicas": [
+            {
+              "partition": 113,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 20971520,
+              "logSize": 0,
+              "beginningOffset": 127155064,
+              "endOffset": 127155064,
+              "recordCount": 0
+            },
+            {
+              "partition": 49,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 20971520,
+              "logSize": 0,
+              "beginningOffset": 137435772,
+              "endOffset": 137435772,
+              "recordCount": 0
+            },
+            {
+              "partition": 112,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 20971520,
+              "logSize": 0,
+              "beginningOffset": 94740816,
+              "endOffset": 94740816,
+              "recordCount": 0
+            },
+            {
+              "partition": 50,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 20971520,
+              "logSize": 0,
+              "beginningOffset": 129676231,
+              "endOffset": 129676231,
+              "recordCount": 0
+            },
+            {
+              "partition": 63,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 20971520,
+              "logSize": 0,
+              "beginningOffset": 89979685,
+              "endOffset": 89979685,
+              "recordCount": 0
+            }
+          ]
+        },
+        {
+          "name": "road.hotel_charlie_sierra",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 60,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 58449054145,
+              "logSize": 58270065676,
+              "beginningOffset": 353193937,
+              "endOffset": 363371317,
+              "recordCount": 10177380
+            },
+            {
+              "partition": 2,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 55403338468,
+              "logSize": 55233937111,
+              "beginningOffset": 419078604,
+              "endOffset": 428787420,
+              "recordCount": 9708816
+            },
+            {
+              "partition": 66,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 55116886087,
+              "logSize": 54947301179,
+              "beginningOffset": 406414882,
+              "endOffset": 416064263,
+              "recordCount": 9649381
+            },
+            {
+              "partition": 1,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 55986881137,
+              "logSize": 55818370453,
+              "beginningOffset": 415919060,
+              "endOffset": 425683206,
+              "recordCount": 9764146
+            },
+            {
+              "partition": 67,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 54985954705,
+              "logSize": 54816760335,
+              "beginningOffset": 354308045,
+              "endOffset": 363954235,
+              "recordCount": 9646190
+            }
+          ]
+        },
+        {
+          "name": "road.hotel_delta_romeo",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 4,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 204957812,
+              "logSize": 183300227,
+              "beginningOffset": 45126479,
+              "endOffset": 46241185,
+              "recordCount": 1114706
+            }
+          ]
+        },
+        {
+          "name": "road.hotel_bravo_sierra_alpha",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 58,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 246542927,
+              "logSize": 225571385,
+              "beginningOffset": 20663724,
+              "endOffset": 21184655,
+              "recordCount": 520931
+            },
+            {
+              "partition": 59,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 246625456,
+              "logSize": 225653914,
+              "beginningOffset": 20671990,
+              "endOffset": 21193117,
+              "recordCount": 521127
+            },
+            {
+              "partition": 57,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 246596600,
+              "logSize": 225625058,
+              "beginningOffset": 20657714,
+              "endOffset": 21178752,
+              "recordCount": 521038
+            }
+          ]
+        },
+        {
+          "name": "road.hotel_papa_delta_papa_sierra",
+          "retention": "PT24H",
+          "partitionReplicas": [
+            {
+              "partition": 5,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 5499106072,
+              "logSize": 5464109290,
+              "beginningOffset": 588422116,
+              "endOffset": 589944728,
+              "recordCount": 1522612
+            }
+          ]
+        },
+        {
+          "name": "road.hotel_papa_romeo_sierra",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 0,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 37354350816,
+              "logSize": 37237632339,
+              "beginningOffset": 204944860,
+              "endOffset": 215318931,
+              "recordCount": 10374071
+            },
+            {
+              "partition": 2,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 36173347475,
+              "logSize": 36059721885,
+              "beginningOffset": 198655869,
+              "endOffset": 208701393,
+              "recordCount": 10045524
+            }
+          ]
+        },
+        {
+          "name": "road.lima_papa_papa_uniform",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 1,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 51849067,
+              "logSize": 30754464,
+              "beginningOffset": 2893423,
+              "endOffset": 3054722,
+              "recordCount": 161299
+            }
+          ]
+        },
+        {
+          "name": "road.oscar_oscar_lima_charlie_charlie",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 3,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 1372022388,
+              "logSize": 1350258460,
+              "beginningOffset": 1468107,
+              "endOffset": 1545355,
+              "recordCount": 77248
+            },
+            {
+              "partition": 4,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 1378652999,
+              "logSize": 1356888863,
+              "beginningOffset": 1467178,
+              "endOffset": 1544569,
+              "recordCount": 77391
+            }
+          ]
+        },
+        {
+          "name": "road.oscar_oscar_lima_uniform",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 3,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 754669451,
+              "logSize": 733269376,
+              "beginningOffset": 753547,
+              "endOffset": 795065,
+              "recordCount": 41518
+            },
+            {
+              "partition": 4,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 754626679,
+              "logSize": 733224136,
+              "beginningOffset": 753681,
+              "endOffset": 795156,
+              "recordCount": 41475
+            }
+          ]
+        },
+        {
+          "name": "road.papa_charlie",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 19,
+              "leader": true,
+              "inSync": true,
+              "sizeOnDisk": 32476096420,
+              "logSize": 32391107948,
+              "beginningOffset": 50576700,
+              "endOffset": 53990370,
+              "recordCount": 3413670
+            },
+            {
+              "partition": 59,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 32454300008,
+              "logSize": 32369511628,
+              "beginningOffset": 50582186,
+              "endOffset": 53992507,
+              "recordCount": 3410321
+            },
+            {
+              "partition": 57,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 32458067064,
+              "logSize": 32373148480,
+              "beginningOffset": 50589281,
+              "endOffset": 54000255,
+              "recordCount": 3410974
+            }
+          ]
+        },
+        {
+          "name": "road.tango_romeo_delta_lima",
+          "retention": "PT168H",
+          "partitionReplicas": [
+            {
+              "partition": 0,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 20971516,
+              "logSize": 0,
+              "beginningOffset": 0,
+              "endOffset": 0,
+              "recordCount": 0
+            },
+            {
+              "partition": 1,
+              "leader": false,
+              "inSync": true,
+              "sizeOnDisk": 20971516,
+              "logSize": 0,
+              "beginningOffset": 0,
+              "endOffset": 0,
+              "recordCount": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
