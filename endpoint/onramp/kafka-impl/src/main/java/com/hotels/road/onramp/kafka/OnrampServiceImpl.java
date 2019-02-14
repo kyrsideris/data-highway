@@ -15,36 +15,34 @@
  */
 package com.hotels.road.onramp.kafka;
 
+import static java.util.Optional.ofNullable;
+
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.kafka.clients.producer.Producer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.hotels.road.model.core.Road;
 import com.hotels.road.onramp.api.Onramp;
+import com.hotels.road.onramp.api.OnrampImpl;
+import com.hotels.road.onramp.api.OnrampSender;
 import com.hotels.road.onramp.api.OnrampService;
 
 @Component
 public class OnrampServiceImpl implements OnrampService {
-  private final OnrampMetrics metrics;
   private final Map<String, Road> roads;
-  private final Producer<byte[], byte[]> kafkaProducer;
+  private final OnrampSender sender;
 
   @Autowired
-  public OnrampServiceImpl(
-      OnrampMetrics metrics,
-      @Value("#{store}") Map<String, Road> roads,
-      Producer<byte[], byte[]> kafkaProducer) {
-    this.metrics = metrics;
+  public OnrampServiceImpl(@Value("#{store}") Map<String, Road> roads, OnrampSender sender) {
     this.roads = roads;
-    this.kafkaProducer = kafkaProducer;
+    this.sender = sender;
   }
 
   @Override
   public Optional<Onramp> getOnramp(String name) {
-    return Optional.ofNullable(roads.get(name)).map(road -> new OnrampImpl(metrics, kafkaProducer, road));
+    return ofNullable(roads.get(name)).map(road -> new OnrampImpl(road, sender));
   }
 }

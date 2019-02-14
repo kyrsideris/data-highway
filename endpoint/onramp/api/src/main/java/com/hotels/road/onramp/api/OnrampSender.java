@@ -15,13 +15,12 @@
  */
 package com.hotels.road.onramp.api;
 
-import lombok.Value;
+import java.util.concurrent.Future;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.hotels.road.model.core.Road;
 
-@Value
-public class Event {
-  Integer partition;
-  String key;
-  ObjectNode message;
+public interface OnrampSender {
+  int getPartitionCount(Road road);
+
+  Future<Boolean> sendEvent(Road road, SenderEvent event);
 }

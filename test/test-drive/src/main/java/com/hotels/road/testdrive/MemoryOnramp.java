@@ -15,61 +15,34 @@
  */
 package com.hotels.road.testdrive;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import lombok.RequiredArgsConstructor;
+
 import com.google.common.util.concurrent.Futures;
 
-import com.hotels.jasvorno.JasvornoConverter;
-import com.hotels.jasvorno.JasvornoConverterException;
-import com.hotels.road.exception.InvalidEventException;
-import com.hotels.road.exception.InvalidKeyException;
-import com.hotels.road.exception.RoadUnavailableException;
 import com.hotels.road.model.core.Road;
-import com.hotels.road.model.core.SchemaVersion;
-import com.hotels.road.offramp.api.Payload;
-import com.hotels.road.offramp.api.Record;
-import com.hotels.road.onramp.api.Event;
-import com.hotels.road.onramp.api.Onramp;
-import com.hotels.road.onramp.api.OnrampTemplate;
+import com.hotels.road.onramp.api.OnrampSender;
+import com.hotels.road.onramp.api.SenderEvent;
 
-class MemoryOnramp extends OnrampTemplate<Void, JsonNode> implements Onramp {
-  private final Map<String, List<Record>> messages;
-  private final Road road;
-
-  MemoryOnramp(Road road, Map<String, List<Record>> messages) {
-    super(road);
-    this.road = road;
-    this.messages = messages;
-  }
+@RequiredArgsConstructor
+public class MemoryOnramp implements OnrampSender {
+  private final Map<String, List<SenderEvent>> messages;
 
   @Override
-  public SchemaVersion getSchemaVersion() {
-    return SchemaVersion.latest(road.getSchemas().values()).orElseThrow(
-        () -> new RoadUnavailableException(String.format("Road '%s' has no schema.", road.getName())));
-  }
-
-  @Override
-  protected Event<Void, JsonNode> encodeEvent(JsonNode jsonEvent, SchemaVersion schemaVersion)
-    throws InvalidEventException {
-    try {
-      JasvornoConverter.convertToAvro(jsonEvent, schemaVersion.getSchema());
-      return new Event<>(null, jsonEvent);
-    } catch (JasvornoConverterException e) {
-      throw new InvalidEventException(e.getMessage());
-    }
-  }
-
-  @Override
-  protected Future<Boolean> sendEncodedEvent(Event<Void, JsonNode> event, SchemaVersion schemaVersion)
-    throws InvalidKeyException {
-    Payload<JsonNode> payload = new Payload<>((byte) 0, schemaVersion.getVersion(), event.getMessage());
-    List<Record> messages = this.messages.computeIfAbsent(road.getName(), name -> new ArrayList<>());
-    Record record = new Record(0, messages.size(), System.currentTimeMillis(), payload);
-    messages.add(record);
+  public Future<Boolean> sendEvent(Road road, SenderEvent event) {
+    checkArgument(event.getPartition() == 0);
+    this.messages.computeIfAbsent(road.getName(), name -> new ArrayList<>()).add(event);
     return Futures.immediateFuture(true);
+  }
+
+  @Override
+  public int getPartitionCount(Road road) {
+    return 1;
   }
 }

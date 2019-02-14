@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.onramp.kafka;
+package com.hotels.road.onramp.api;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -30,6 +30,7 @@ import org.apache.avro.io.DecoderFactory;
 import org.junit.Test;
 
 import com.hotels.road.model.core.SchemaVersion;
+import com.hotels.road.onramp.api.AvroJsonEncoder;
 
 public class AvroValueEncoderTest {
 
@@ -44,7 +45,7 @@ public class AvroValueEncoderTest {
       .endRecord();
   private final SchemaVersion schemaVersion = new SchemaVersion(schema, 1, false);
 
-  private final AvroValueEncoder underTest = new AvroValueEncoder(schemaVersion);
+  private final AvroJsonEncoder underTest = new AvroJsonEncoder(schemaVersion);
 
   @Test
   public void encodeTwo() throws Exception {

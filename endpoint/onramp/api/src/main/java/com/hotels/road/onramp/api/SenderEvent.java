@@ -16,12 +16,12 @@
 package com.hotels.road.onramp.api;
 
 import lombok.Value;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.experimental.Wither;
 
 @Value
-public class Event {
-  Integer partition;
-  String key;
-  ObjectNode message;
+@Wither
+public class SenderEvent {
+  int partition;
+  byte[] key;
+  byte[] message;
 }

@@ -16,17 +16,79 @@
 package com.hotels.road.onramp.api;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class EventTest {
+  private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  public void testThatGettersMapFieldsCorrectly() {
-    Event<Integer, String> event = new Event<>(1, "a");
-    assertThat(event.getKey(), is(1));
-    assertThat(event.getMessage(), is("a"));
+  public void event_seserialisation_test() throws Exception {
+    String jsonText = "{\n"
+        + "  \"partition\": 1,\n"
+        + "  \"key\": \"123\",\n"
+        + "  \"message\": {\n"
+        + "    \"name\": \"message_123\"\n"
+        + "  }\n"
+        + "}";
+
+    Event event = mapper.readValue(jsonText, Event.class);
+
+    assertThat(event.getPartition(), is(1));
+    assertThat(event.getKey(), is("123"));
+    assertThat(event.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
   }
 
+  @Test
+  public void event_with_null_partition() throws Exception {
+    String jsonText = "{\n"
+        + "  \"partition\": null,\n"
+        + "  \"key\": \"123\",\n"
+        + "  \"message\": {\n"
+        + "    \"name\": \"message_123\"\n"
+        + "  }\n"
+        + "}";
+
+    Event event = mapper.readValue(jsonText, Event.class);
+
+    assertThat(event.getPartition(), is(nullValue()));
+    assertThat(event.getKey(), is("123"));
+    assertThat(event.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
+  }
+
+  @Test
+  public void event_with_null_key() throws Exception {
+    String jsonText = "{\n"
+        + "  \"partition\": 1,\n"
+        + "  \"key\": null,\n"
+        + "  \"message\": {\n"
+        + "    \"name\": \"message_123\"\n"
+        + "  }\n"
+        + "}";
+
+    Event event = mapper.readValue(jsonText, Event.class);
+
+    assertThat(event.getPartition(), is(1));
+    assertThat(event.getKey(), is(nullValue()));
+    assertThat(event.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
+  }
+
+  @Test
+  public void event_with_null_message() throws Exception {
+    String jsonText = "{\n"
+        + "  \"partition\": 1,\n"
+        + "  \"key\": \"123\",\n"
+        + "  \"message\": null\n"
+        + "}";
+
+    Event event = mapper.readValue(jsonText, Event.class);
+
+    assertThat(event.getPartition(), is(1));
+    assertThat(event.getKey(), is("123"));
+    assertThat(event.getMessage(), is(nullValue()));
+  }
 }

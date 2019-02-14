@@ -13,34 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.onramp.kafka;
+package com.hotels.road.onramp.api;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.function.Function;
 
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.EncoderFactory;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.primitives.Ints;
 
+import com.hotels.jasvorno.JasvornoConverter;
 import com.hotels.road.model.core.SchemaVersion;
 
-class AvroValueEncoder {
+public class AvroJsonEncoder implements Function<JsonNode, byte[]> {
   private static final byte MAGIC_BYTE = 0x00;
 
+  private final byte[] version;
+  private final Schema schema;
   private final ByteArrayOutputStream buffer;
   private final BinaryEncoder encoder;
   private final DatumWriter<Object> writer;
-  private final int version;
 
-  AvroValueEncoder(SchemaVersion schemaVersion) {
-    buffer = new ByteArrayOutputStream(); // does not need to be closed
+  public AvroJsonEncoder(SchemaVersion schemaVersion) {
+    version = Ints.toByteArray(schemaVersion.getVersion());
+    schema = schemaVersion.getSchema();
+
+    buffer = new ByteArrayOutputStream(2048); // does not need to be closed
     encoder = EncoderFactory.get().directBinaryEncoder(buffer, null);
-    writer = new GenericDatumWriter<>(schemaVersion.getSchema());
-    version = schemaVersion.getVersion();
+    writer = new GenericDatumWriter<>(schema);
   }
 
   /**
@@ -50,12 +58,20 @@ class AvroValueEncoder {
     byte[] bytes = null;
     try {
       buffer.write(MAGIC_BYTE);
-      buffer.write(Ints.toByteArray(version));
+      buffer.write(version);
       writer.write(record, encoder);
       encoder.flush();
       bytes = buffer.toByteArray();
       buffer.reset();
     } catch (IOException unreachable) {}
     return bytes;
+  }
+
+  @Override
+  public byte[] apply(JsonNode record) {
+    if (record == null || record.isNull()) {
+      return null;
+    }
+    return encode((GenericRecord) JasvornoConverter.convertToAvro(GenericData.get(), record, schema));
   }
 }

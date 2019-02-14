@@ -15,8 +15,8 @@
  */
 package com.hotels.road.model.core;
 
+import java.util.Comparator;
 import java.util.Optional;
-import java.util.stream.StreamSupport;
 
 import org.apache.avro.Schema;
 
@@ -24,6 +24,7 @@ import lombok.Data;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.Streams;
 
 @Data
 public class SchemaVersion {
@@ -42,11 +43,12 @@ public class SchemaVersion {
   }
 
   public static Optional<SchemaVersion> latest(Iterable<SchemaVersion> schemas) {
-    return StreamSupport.stream(schemas.spliterator(), false).filter(s -> !s.isDeleted()).max(
-        (s1, s2) -> s1.version - s2.version);
+    return Streams.stream(schemas).filter(s -> !s.isDeleted())
+        // (s1, s2) -> s1.version - s2.version
+        .max(Comparator.comparingInt(s -> s.version));
   }
 
   public static Optional<SchemaVersion> version(Iterable<SchemaVersion> schemas, int version) {
-    return StreamSupport.stream(schemas.spliterator(), false).filter(s -> s.version == version).findFirst();
+    return Streams.stream(schemas).filter(s -> s.version == version).findFirst();
   }
 }
