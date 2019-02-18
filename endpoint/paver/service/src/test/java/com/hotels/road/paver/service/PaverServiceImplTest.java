@@ -26,6 +26,9 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import static com.hotels.road.schema.gdpr.PiiVisitor.PII;
+import static com.hotels.road.schema.gdpr.PiiVisitor.SENSITIVITY;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +38,9 @@ import java.util.Set;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -43,6 +48,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.google.common.collect.ImmutableSortedSet;
 
+import com.hotels.road.exception.InvalidSchemaException;
 import com.hotels.road.model.core.HiveDestination;
 import com.hotels.road.model.core.KafkaStatus;
 import com.hotels.road.model.core.Road;
@@ -56,6 +62,7 @@ import com.hotels.road.rest.model.Authorisation;
 import com.hotels.road.rest.model.Authorisation.Offramp;
 import com.hotels.road.rest.model.Authorisation.Onramp;
 import com.hotels.road.rest.model.BasicRoadModel;
+import com.hotels.road.rest.model.RoadType;
 import com.hotels.road.security.CidrBlockValidator;
 import com.hotels.road.tollbooth.client.api.Operation;
 import com.hotels.road.tollbooth.client.api.PatchOperation;
@@ -63,6 +70,9 @@ import com.hotels.road.tollbooth.client.api.PatchSet;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PaverServiceImplTest {
+
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
 
   private static final Schema MESSAGE_SCHEMA = SchemaBuilder
       .record("r")
@@ -230,4 +240,25 @@ public class PaverServiceImplTest {
     underTest.applyPatch(road.getName(), patchSet);
   }
 
+  @Test
+  public void addPiiSchemaOnCompactedRoad() throws Exception {
+    Schema schema = SchemaBuilder
+        .record("r")
+        .fields()
+        .name("f")
+        .prop(SENSITIVITY, PII)
+        .type(SchemaBuilder.builder().stringType())
+        .noDefault()
+        .endRecord();
+
+    final Road road = new Road();
+    road.setType(RoadType.COMPACT);
+
+    when(roadAdminClient.getRoad(ROAD_NAME)).thenReturn(Optional.of(road));
+    when(schemaStoreClient.registerSchema(ROAD_NAME, schema))
+        .thenReturn(new SchemaVersion(schema, 1, false));
+    expectedException.expect(InvalidSchemaException.class);
+    expectedException.expectMessage("PII schema is not allowed with compacted roads.");
+    underTest.addSchema(ROAD_NAME, schema);
+  }
 }

@@ -210,10 +210,12 @@ public class PaverServiceImpl implements PaverService {
       new KeyPathValidator(KeyPathParser.parse(road.getPartitionPath()), schema).validate();
     }
 
-    final PiiSchemaCheckVisitor visitor = new PiiSchemaCheckVisitor();
-    SchemaTraverser.traverse(schema, visitor);
-    if (visitor.isPiiSchema()) {
-      throw new InvalidSchemaException("PII schema is not allowed with compacted roads.");
+    if (road.getType() == RoadType.COMPACT) {
+      final PiiSchemaCheckVisitor visitor = new PiiSchemaCheckVisitor();
+      SchemaTraverser.traverse(schema, visitor);
+      if (visitor.isPiiSchema()) {
+        throw new InvalidSchemaException("PII schema is not allowed with compacted roads.");
+      }
     }
 
     SchemaVersion schemaVersion = function.apply(schema);
