@@ -71,9 +71,6 @@ import com.hotels.road.tollbooth.client.api.PatchSet;
 @RunWith(MockitoJUnitRunner.class)
 public class PaverServiceImplTest {
 
-  @Rule
-  public ExpectedException expectedException = ExpectedException.none();
-
   private static final Schema MESSAGE_SCHEMA = SchemaBuilder
       .record("r")
       .fields()
@@ -83,18 +80,15 @@ public class PaverServiceImplTest {
       .noDefault()
       .endRecord();
   private static final String ROAD_NAME = "wide_road";
-
   private final List<PatchMapping> mappings = Collections.singletonList(new EnabledPatchMapping());
-
   private final Road road = new Road();
-
+  private final CidrBlockValidator cidrBlockValidator = new CidrBlockValidator();
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
   @Mock
   private RoadAdminClient roadAdminClient;
   @Mock
   private SchemaStoreClient schemaStoreClient;
-
-  private final CidrBlockValidator cidrBlockValidator = new CidrBlockValidator();
-
   private PaverService underTest;
 
   @Mock
@@ -255,10 +249,10 @@ public class PaverServiceImplTest {
     road.setType(RoadType.COMPACT);
 
     when(roadAdminClient.getRoad(ROAD_NAME)).thenReturn(Optional.of(road));
-    when(schemaStoreClient.registerSchema(ROAD_NAME, schema))
-        .thenReturn(new SchemaVersion(schema, 1, false));
+
     expectedException.expect(InvalidSchemaException.class);
     expectedException.expectMessage("PII schema is not allowed with compacted roads.");
     underTest.addSchema(ROAD_NAME, schema);
   }
+
 }

@@ -46,40 +46,35 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.reactivestreams.Subscriber;
-
-import ch.qos.logback.classic.Level;
-
 import org.slf4j.LoggerFactory;
-
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
-
-import reactor.core.Disposable;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.hotels.road.offramp.model.Error;
 import com.hotels.road.offramp.model.Cancel;
 import com.hotels.road.offramp.model.CommitResponse;
+import com.hotels.road.offramp.model.Error;
 import com.hotels.road.offramp.model.Message;
 import com.hotels.road.offramp.model.Rebalance;
 import com.hotels.road.offramp.model.Request;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 @RunWith(MockitoJUnitRunner.class)
 public class OfframpClientImplTest {
 
+  private final URI uri = URI.create("http://localhost");
+  private final ObjectMapper mapper = new ObjectMapper();
   private @Mock WebSocket.Factory socketFactory;
   private @Mock WebSocket socket;
   private @Mock CommitHandler.Factory commitHandlerFactory;
   private @Mock CommitHandler commitHandler;
   private @Mock OfframpOptions<String> options;
-
-  private final URI uri = URI.create("http://localhost");
-  private final ObjectMapper mapper = new ObjectMapper();
-
   private OfframpClientImpl<String> underTest;
 
   @Before
@@ -116,10 +111,10 @@ public class OfframpClientImplTest {
 
     Disposable subscribe = Flux.from(underTest.messages()).log().subscribe();
     Subscriber<Message<String>> value = underTest.getMessages();
-    value.onNext(new Message<String>(0, 1L, 2, 3L, "foo"));
+    value.onNext(new Message<String>(0, "k", 1L, 2, 3L, "foo"));
     value.onError(new Exception());
     Thread.sleep(1100); // TODO find a more efficient (read: faster) way of testing this
-    value.onNext(new Message<String>(0, 1L, 2, 3L, "foo"));
+    value.onNext(new Message<String>(0, "k", 1L, 2, 3L, "foo"));
     Thread.sleep(100);
     subscribe.dispose();
 
@@ -162,7 +157,7 @@ public class OfframpClientImplTest {
     doReturn(1).when(options).getReplenishingRequestAmount();
     AtomicReference<Message<String>> result = new AtomicReference<>();
     Flux.from(underTest.messages()).subscribe(result::set);
-    Message<String> message = new Message<>(0, 1L, 2, 3L, "foo");
+    Message<String> message = new Message<>(0, "k", 1L, 2, 3L, "foo");
     underTest.onNext(message);
     await().pollInterval(100, MILLISECONDS).atMost(1, SECONDS).untilAtomic(result, is(message));
   }
@@ -208,4 +203,5 @@ public class OfframpClientImplTest {
     underTest.onNext(new Cancel());
     await().pollDelay(100, MILLISECONDS).until(() -> verify(error, never()).accept(any()));
   }
+
 }

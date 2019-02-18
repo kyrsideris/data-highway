@@ -37,6 +37,7 @@ import com.hotels.road.onramp.api.Onramp;
 import com.hotels.road.onramp.api.OnrampTemplate;
 
 class MemoryOnramp extends OnrampTemplate<Void, JsonNode> implements Onramp {
+
   private final Map<String, List<Record>> messages;
   private final Road road;
 
@@ -54,7 +55,7 @@ class MemoryOnramp extends OnrampTemplate<Void, JsonNode> implements Onramp {
 
   @Override
   protected Event<Void, JsonNode> encodeEvent(JsonNode jsonEvent, SchemaVersion schemaVersion)
-    throws InvalidEventException {
+      throws InvalidEventException {
     try {
       JasvornoConverter.convertToAvro(jsonEvent, schemaVersion.getSchema());
       return new Event<>(null, jsonEvent);
@@ -65,11 +66,12 @@ class MemoryOnramp extends OnrampTemplate<Void, JsonNode> implements Onramp {
 
   @Override
   protected Future<Boolean> sendEncodedEvent(Event<Void, JsonNode> event, SchemaVersion schemaVersion)
-    throws InvalidKeyException {
+      throws InvalidKeyException {
     Payload<JsonNode> payload = new Payload<>((byte) 0, schemaVersion.getVersion(), event.getMessage());
     List<Record> messages = this.messages.computeIfAbsent(road.getName(), name -> new ArrayList<>());
-    Record record = new Record(0, messages.size(), System.currentTimeMillis(), payload);
+    Record record = new Record(0, "k", messages.size(), System.currentTimeMillis(), payload);
     messages.add(record);
     return Futures.immediateFuture(true);
   }
+
 }

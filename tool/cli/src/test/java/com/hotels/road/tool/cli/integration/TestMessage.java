@@ -28,6 +28,7 @@ public class TestMessage {
   private static String payload = join("", nCopies(10, "x"));
 
   public static Message<String> getTestMessage() {
-    return new Message<>(0, 1L, 2, 3L, payload);
+    return new Message<>(0, "k", 1L, 2, 3L, payload);
   }
+
 }

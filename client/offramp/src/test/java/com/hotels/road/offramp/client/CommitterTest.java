@@ -30,19 +30,18 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import reactor.core.Disposable;
-import reactor.core.publisher.Mono;
-
 import com.google.common.collect.ImmutableMap;
 
 import com.hotels.road.offramp.model.Message;
 
+import reactor.core.Disposable;
+import reactor.core.publisher.Mono;
+
 @RunWith(MockitoJUnitRunner.class)
 public class CommitterTest {
 
-  private @Mock OfframpClient<?> client;
-
   private final Duration interval = Duration.ofMillis(500);
+  private @Mock OfframpClient<?> client;
 
   @Test
   public void successfulCommit() throws Exception {
@@ -51,8 +50,8 @@ public class CommitterTest {
     Committer underTest = Committer.create(client, interval);
     Disposable disposable = underTest.start().subscribe();
 
-    underTest.commit(message(0, 1L));
-    underTest.commit(message(0, 2L));
+    underTest.commit(message(0, "k", 1L));
+    underTest.commit(message(0, "k", 2L));
 
     await().pollInterval(100, MILLISECONDS).atMost(2, SECONDS).until(() -> {
       verify(client).commit(ImmutableMap.of(0, 3L));
@@ -69,15 +68,16 @@ public class CommitterTest {
     AtomicBoolean failed = new AtomicBoolean(false);
     Disposable disposable = underTest.start().doOnError(t -> failed.compareAndSet(false, true)).subscribe();
 
-    underTest.commit(message(0, 1L));
-    underTest.commit(message(0, 2L));
+    underTest.commit(message(0, "k", 1L));
+    underTest.commit(message(0, "k", 2L));
 
     await().pollInterval(100, MILLISECONDS).atMost(2, SECONDS).untilTrue(failed);
 
     disposable.dispose();
   }
 
-  private Message<String> message(int partition, long offset) {
-    return new Message<>(partition, offset, 2, 1L, "foo");
+  private Message<String> message(int partition, String key, long offset) {
+    return new Message(partition, key, offset, 2, 1L, "foo");
   }
+
 }

@@ -15,14 +15,17 @@
  */
 package com.hotels.road.offramp.api;
 
-import lombok.Value;
-
 import com.fasterxml.jackson.databind.JsonNode;
+
+import lombok.Value;
 
 @Value
 public class Record {
+
   int partition;
+  String key;
   long offset;
   long timestampMs;
   Payload<JsonNode> payload;
+
 }

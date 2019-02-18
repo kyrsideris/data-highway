@@ -25,9 +25,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -58,20 +56,21 @@ import org.springframework.web.socket.WebSocketSession;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 
-import com.hotels.road.offramp.api.Record;
 import com.hotels.road.offramp.api.UnknownRoadException;
 import com.hotels.road.offramp.metrics.StreamMetrics;
+import com.hotels.road.offramp.model.Message;
 import com.hotels.road.offramp.service.MessageFunction;
 import com.hotels.road.offramp.service.OfframpServiceFactory;
 import com.hotels.road.offramp.service.OfframpServiceV2;
 import com.hotels.road.offramp.spi.RoadConsumer;
 
-
-import com.hotels.road.offramp.model.Message;
-
 @RunWith(MockitoJUnitRunner.class)
 public class OfframpWebSocketHandlerTest {
 
+  private final String version = "2";
+  private final String roadName = "road1";
+  private final String streamName = "stream1";
+  private final String sessionId = "session1";
   private @Mock EventSender sender;
   private @Mock RoadConsumer.Factory consumerFactory;
   private @Mock RoadConsumer consumer;
@@ -84,12 +83,6 @@ public class OfframpWebSocketHandlerTest {
   private @Mock MessageFunction messageFunction;
   private @Mock OfframpAuthorisation authorisation;
   private @Mock Authentication authentication;
-
-  private final String version = "2";
-  private final String roadName = "road1";
-  private final String streamName = "stream1";
-  private final String sessionId = "session1";
-
   private OfframpServiceFactory serviceFactory;
   private OfframpWebSocketHandler underTest;
 
@@ -151,7 +144,7 @@ public class OfframpWebSocketHandlerTest {
 
   @Test
   public void handleBinaryMessage() throws Exception {
-    Message<String> message = new Message<>(0, 1L, 1, 1L, "a");
+    Message<String> message = new Message<>(0, "k", 1L, 1, 1L, "a");
     BinaryMessage binaryMessage = new BinaryMessage((new ObjectMapper()).writeValueAsBytes(message));
     String refUtf8 = new String(binaryMessage.getPayload().array(), UTF_8);
     String refUtf16 = new String(binaryMessage.getPayload().array(), UTF_16);
@@ -169,7 +162,7 @@ public class OfframpWebSocketHandlerTest {
 
   @Test
   public void handleTextMessage() throws Exception {
-    Message<String> message = new Message<>(0, 1L, 1, 1L, "a");
+    Message<String> message = new Message<>(0, "k", 1L, 1, 1L, "a");
     TextMessage textMessage = new TextMessage((new ObjectMapper()).writeValueAsString(message));
     String refUtf8 = new String(textMessage.getPayload().getBytes(), UTF_8);
     String refUtf16 = new String(textMessage.getPayload().getBytes(), UTF_16);
@@ -184,4 +177,5 @@ public class OfframpWebSocketHandlerTest {
     assertEquals(refUtf8, out);
     assertNotEquals(refUtf16, out);
   }
+
 }

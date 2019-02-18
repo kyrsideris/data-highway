@@ -19,17 +19,19 @@ import static com.hotels.road.offramp.model.Event.Type.MESSAGE;
 
 import java.io.Serializable;
 
-import lombok.Data;
-import lombok.NonNull;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.Data;
+import lombok.NonNull;
+
 @Data
 public class Message<T> implements Event, Serializable {
+
   private static final long serialVersionUID = 1L;
   private final Type type = MESSAGE;
   private final int partition;
+  private final String key;
   private final long offset;
   private final int schema;
   private final long timestampMs;
@@ -38,14 +40,17 @@ public class Message<T> implements Event, Serializable {
   @JsonCreator
   public Message(
       @JsonProperty("partition") int partition,
+      @JsonProperty("key") String key,
       @JsonProperty("offset") long offset,
       @JsonProperty("schema") int schema,
       @JsonProperty("timestampMs") long timestampMs,
       @JsonProperty("payload") T payload) {
     this.partition = partition;
+    this.key = key;
     this.offset = offset;
     this.schema = schema;
     this.timestampMs = timestampMs;
     this.payload = payload;
   }
+
 }

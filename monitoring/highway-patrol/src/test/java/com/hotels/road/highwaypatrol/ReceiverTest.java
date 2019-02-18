@@ -26,24 +26,23 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import reactor.core.publisher.Flux;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
 import com.hotels.road.offramp.client.OfframpClient;
 import com.hotels.road.offramp.model.Message;
 
+import reactor.core.publisher.Flux;
+
 @RunWith(MockitoJUnitRunner.class)
 public class ReceiverTest {
+
   private final String origin = "fake";
+  private final TestMessage message1 = new TestMessage(origin, 0, 1L, 1L, "message1");
+  private final TestMessage message2 = new TestMessage(origin, 1, 2L, 2L, "message2");
   private @Mock MessagesMetricSet metrics;
   private @Mock TestMessageContextManager contextManager;
   private @Mock OfframpClient<TestMessage> offramp;
-
-  private final TestMessage message1 = new TestMessage(origin, 0, 1L, 1L, "message1");
-  private final TestMessage message2 = new TestMessage(origin, 1, 2L, 2L, "message2");
-
   private @Mock TestMessageContext context1;
   private @Mock TestMessageContext context2;
 
@@ -52,16 +51,16 @@ public class ReceiverTest {
     when(contextManager.getContext(message1)).thenReturn(context1);
     when(contextManager.getContext(message2)).thenReturn(context2);
 
-    when(offramp.messages()).thenReturn(Flux.<Message<TestMessage>> fromIterable(ImmutableList
+    when(offramp.messages()).thenReturn(Flux.fromIterable(ImmutableList
         .<Message<TestMessage>> builder()
-        .add(new Message<>(0, 1, 1, 2L, message1))
-        .add(new Message<>(0, 2, 1, 3L, message2))
+        .add(new Message<>(0, "k", 1, 1, 2L, message1))
+        .add(new Message<>(0, "k1", 2, 1, 3L, message2))
         .build()));
 
-    when(offramp.rebalances()).thenReturn(Flux.<Set<Integer>> fromIterable(ImmutableList
+    when(offramp.rebalances()).thenReturn(Flux.fromIterable(ImmutableList
         .<Set<Integer>> builder()
-        .add(Sets.<Integer> newHashSet())
-        .add(Sets.<Integer> newHashSet(0, 1, 2, 3, 4, 5))
+        .add(Sets.newHashSet())
+        .add(Sets.newHashSet(0, 1, 2, 3, 4, 5))
         .build()));
   }
 
@@ -74,4 +73,5 @@ public class ReceiverTest {
       verify(context2).messageReceived(message2);
     }
   }
+
 }

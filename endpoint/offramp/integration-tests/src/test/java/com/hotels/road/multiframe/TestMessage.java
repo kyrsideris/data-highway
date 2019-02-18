@@ -28,9 +28,8 @@ public class TestMessage {
   @Getter
   private static String payload = join("", nCopies(1024, "x"));
 
-  public static Message<String> getTestMessage()
-  {
-    return new Message<>(0, 1L, 2, 3L, payload);
+  public static Message<String> getTestMessage() {
+    return new Message<>(0, "k", 1L, 2, 3L, payload);
   }
 
 }

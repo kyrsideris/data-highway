@@ -37,11 +37,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.apache.kafka.common.serialization.Deserializer;
-
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.serialization.StringDeserializer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.FluentIterable;
@@ -54,11 +50,17 @@ import com.hotels.road.offramp.api.UnknownRoadException;
 import com.hotels.road.offramp.model.DefaultOffset;
 import com.hotels.road.offramp.spi.RoadConsumer;
 
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 @RequiredArgsConstructor(access = PACKAGE)
 public class KafkaRoadConsumer implements RoadConsumer {
+
   static final String GROUP_ID_PREFIX = "offramp";
-  private static final Deserializer<Void> keyDeserializer = new NullDeserializer();
+  private static final Deserializer<String> keyDeserializer = new StringDeserializer();
   private static final Deserializer<Payload<byte[]>> valueDeserializer = new PayloadDeserializer();
 
   private final @Getter(PACKAGE) Properties properties;
@@ -69,7 +71,7 @@ public class KafkaRoadConsumer implements RoadConsumer {
   private final long pollTimeoutMillis;
   private final int minMaxPollRecords;
   private final int maxMaxPollRecords;
-  private Consumer<Void, Payload<byte[]>> consumer;
+  private Consumer<String, Payload<byte[]>> consumer;
 
   public KafkaRoadConsumer(
       Properties properties,
@@ -103,7 +105,7 @@ public class KafkaRoadConsumer implements RoadConsumer {
       Schema schema = schemaProvider.schema(roadName, p.getSchemaVersion());
       JsonNode message = payloadDecoder.decode(schema, p.getMessage());
       Payload<JsonNode> payload = new Payload<>(p.getFormatVersion(), p.getSchemaVersion(), message);
-      return new Record(r.partition(), r.offset(), r.timestamp(), payload);
+      return new Record(r.partition(), r.key(), r.offset(), r.timestamp(), payload);
     }).toList();
   }
 
@@ -136,12 +138,13 @@ public class KafkaRoadConsumer implements RoadConsumer {
     }
   }
 
-  Consumer<Void, Payload<byte[]>> createConsumer() {
-    return new KafkaConsumer<>(properties, keyDeserializer, valueDeserializer);
+  Consumer<String, Payload<byte[]>> createConsumer() {
+    return new KafkaConsumer(properties, keyDeserializer, valueDeserializer);
   }
 
   @RequiredArgsConstructor
   public static class Factory implements RoadConsumer.Factory {
+
     private final String bootstrapServers;
     private final Map<String, Road> store;
     private final long pollTimeoutMillis;
@@ -154,7 +157,7 @@ public class KafkaRoadConsumer implements RoadConsumer {
         @NonNull String roadName,
         @NonNull String streamName,
         @NonNull DefaultOffset defaultOffset)
-      throws UnknownRoadException {
+        throws UnknownRoadException {
       String topic = Optional.of(roadName).map(store::get).map(Road::getTopicName).orElseThrow(
           () -> new UnknownRoadException("Unknown road: " + roadName));
 
@@ -167,11 +170,13 @@ public class KafkaRoadConsumer implements RoadConsumer {
       return new KafkaRoadConsumer(properties, topic, roadName, schemaProvider, pollTimeoutMillis, minMaxPollRecords,
           maxMaxPollRecords);
     }
+
   }
 
   @Slf4j
   @RequiredArgsConstructor
   static class KafkaRebalanceListener implements ConsumerRebalanceListener {
+
     private @NonNull @Getter final RebalanceListener rebalanceListener;
 
     @Override
@@ -184,5 +189,7 @@ public class KafkaRoadConsumer implements RoadConsumer {
     public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
       rebalanceListener.onRebalance(partitions.stream().map(TopicPartition::partition).collect(toSet()));
     }
+
   }
+
 }

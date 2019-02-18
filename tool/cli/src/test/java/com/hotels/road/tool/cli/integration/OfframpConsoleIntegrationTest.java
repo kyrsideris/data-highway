@@ -49,13 +49,12 @@ import picocli.CommandLine;
 
 public class OfframpConsoleIntegrationTest {
 
+  private static ConfigurableApplicationContext context;
+  private static String host;
   private final ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
   private final ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
   private final PrintStream stdout = System.out;
   private final PrintStream stderr = System.err;
-
-  private static ConfigurableApplicationContext context;
-  private static String host;
 
   @BeforeClass
   public static void beforeClass() throws Exception {
@@ -81,27 +80,6 @@ public class OfframpConsoleIntegrationTest {
     context = new SpringApplicationBuilder(WebSocketHandlerTest.class, TestSecurityConf.class)
         .bannerMode(OFF)
         .run(args);
-  }
-
-  @Configuration
-  @EnableGlobalMethodSecurity(prePostEnabled = true)
-  @SpringBootApplication(exclude = {
-      SessionAutoConfiguration.class,
-      RedisAutoConfiguration.class,
-      RedisRepositoriesAutoConfiguration.class })
-  public static class TestSecurityConf {
-
-    @Bean
-    public WebSecurityConfigurerAdapter webSecurityConfigurerAdapter() {
-      return new RoadWebSecurityConfigurerAdapter() {
-        @SuppressWarnings("deprecation")
-        @Override
-        protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-          auth.inMemoryAuthentication().withUser(
-              User.withDefaultPasswordEncoder().username("user").password("pass").authorities("ROLE_USER"));
-        }
-      };
-    }
   }
 
   @AfterClass
@@ -138,6 +116,7 @@ public class OfframpConsoleIntegrationTest {
     String ref = "{"
         + "\"type\":\"MESSAGE\","
         + "\"partition\":0,"
+        + "\"key\":\"k\","
         + "\"offset\":1,"
         + "\"schema\":2,"
         + "\"timestampMs\":3,"
@@ -162,6 +141,7 @@ public class OfframpConsoleIntegrationTest {
     String ref = "{"
         + "\"type\":\"MESSAGE\","
         + "\"partition\":0,"
+        + "\"key\":\"k\","
         + "\"offset\":1,"
         + "\"schema\":2,"
         + "\"timestampMs\":3,"
@@ -186,6 +166,7 @@ public class OfframpConsoleIntegrationTest {
     String ref = "---\n"
         + "type: \"MESSAGE\"\n"
         + "partition: 0\n"
+        + "key: \"k\"\n"
         + "offset: 1\n"
         + "schema: 2\n"
         + "timestampMs: 3\n"
@@ -193,4 +174,26 @@ public class OfframpConsoleIntegrationTest {
         + "\n";
     assertEquals(ref, outBuffer.toString());
   }
+  @Configuration
+  @EnableGlobalMethodSecurity(prePostEnabled = true)
+  @SpringBootApplication(exclude = {
+      SessionAutoConfiguration.class,
+      RedisAutoConfiguration.class,
+      RedisRepositoriesAutoConfiguration.class })
+  public static class TestSecurityConf {
+
+    @Bean
+    public WebSecurityConfigurerAdapter webSecurityConfigurerAdapter() {
+      return new RoadWebSecurityConfigurerAdapter() {
+        @SuppressWarnings("deprecation")
+        @Override
+        protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+          auth.inMemoryAuthentication().withUser(
+              User.withDefaultPasswordEncoder().username("user").password("pass").authorities("ROLE_USER"));
+        }
+      };
+    }
+
+  }
+
 }
