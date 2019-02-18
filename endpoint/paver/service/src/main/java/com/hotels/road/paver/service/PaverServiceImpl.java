@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.hotels.road.exception.InvalidKeyPathException;
+import com.hotels.road.exception.InvalidSchemaException;
 import com.hotels.road.exception.InvalidSchemaVersionException;
 import com.hotels.road.exception.ServiceException;
 import com.hotels.road.exception.UnknownRoadException;
@@ -58,12 +59,15 @@ import com.hotels.road.rest.model.RoadModel;
 import com.hotels.road.rest.model.RoadType;
 import com.hotels.road.rest.model.Sensitivity;
 import com.hotels.road.rest.model.validator.RoadNameValidator;
+import com.hotels.road.schema.SchemaTraverser;
+import com.hotels.road.schema.gdpr.PiiSchemaCheckVisitor;
 import com.hotels.road.security.CidrBlockValidator;
 import com.hotels.road.tollbooth.client.api.PatchOperation;
 import com.hotels.road.tollbooth.client.api.PatchSet;
 
 @Component
 public class PaverServiceImpl implements PaverService {
+
   private final RoadAdminClient roadAdminClient;
   private final SchemaStoreClient schemaStoreClient;
   private final CidrBlockValidator cidrBlockBValidator;
@@ -192,7 +196,7 @@ public class PaverServiceImpl implements PaverService {
 
   @Override
   public SchemaVersion addSchema(String name, Schema schema, int version)
-    throws UnknownRoadException, InvalidKeyPathException, InvalidSchemaVersionException {
+      throws UnknownRoadException, InvalidKeyPathException, InvalidSchemaVersionException {
     return addSchema(name, schema, finalSchema -> {
       schemaStoreClient.registerSchema(name, finalSchema, version);
       return new SchemaVersion(schema, version, false);
@@ -200,10 +204,16 @@ public class PaverServiceImpl implements PaverService {
   }
 
   private SchemaVersion addSchema(String name, Schema schema, CheckedFunction<Schema, SchemaVersion> function)
-    throws UnknownRoadException, InvalidKeyPathException, InvalidSchemaVersionException {
+      throws UnknownRoadException, InvalidKeyPathException, InvalidSchemaVersionException {
     Road road = getRoadOrThrow(name);
     if (StringUtils.isNotBlank(road.getPartitionPath())) {
       new KeyPathValidator(KeyPathParser.parse(road.getPartitionPath()), schema).validate();
+    }
+
+    final PiiSchemaCheckVisitor visitor = new PiiSchemaCheckVisitor();
+    SchemaTraverser.traverse(schema, visitor);
+    if (visitor.isPiiSchema()) {
+      throw new InvalidSchemaException("PII schema is not allowed with compacted roads.");
     }
 
     SchemaVersion schemaVersion = function.apply(schema);
@@ -213,6 +223,7 @@ public class PaverServiceImpl implements PaverService {
 
   @FunctionalInterface
   private static interface CheckedFunction<F, T> {
+
     T apply(F f) throws UnknownRoadException, ServiceException;
   }
 
@@ -245,5 +256,4 @@ public class PaverServiceImpl implements PaverService {
     schemaStoreClient.deleteSchemaVersion(name, version);
     roadSchemaNotificationHandler.handleSchemaDeleted(name, version);
   }
-
 }
