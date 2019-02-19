@@ -30,14 +30,15 @@ import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import lombok.extern.slf4j.Slf4j;
-
 import com.hotels.road.agents.trafficcop.spi.Agent;
 import com.hotels.road.loadingbay.model.Destinations;
 import com.hotels.road.loadingbay.model.Hive;
 import com.hotels.road.loadingbay.model.HiveRoad;
 import com.hotels.road.loadingbay.model.HiveStatus;
+import com.hotels.road.rest.model.RoadType;
 import com.hotels.road.tollbooth.client.api.PatchOperation;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -73,6 +74,10 @@ public class LoadingBay implements Agent<HiveRoad> {
 
   @Override
   public List<PatchOperation> inspectModel(String key, HiveRoad model) {
+    if (model.getType() == RoadType.COMPACT) {
+      log.error("Compacted roads are not allowed in Loading Bay.");
+      return emptyList();
+    }
     Optional<Hive> hive = Optional.ofNullable(model.getDestinations()).map(Destinations::getHive);
     if (hive.isPresent()) {
       OffsetDateTime lastRun = hive.map(Hive::getStatus).map(HiveStatus::getLastRun).orElse(EPOCH);

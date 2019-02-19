@@ -22,12 +22,14 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
 import com.hotels.road.model.core.SchemaVersion;
+import com.hotels.road.rest.model.RoadType;
 
 @JsonDeserialize(builder = HiveRoad.HiveRoadBuilder.class)
 @lombok.Data
 @lombok.Builder
 public class HiveRoad {
   private final String name;
+  private RoadType type;
   private final String topicName;
   private final Map<Integer, SchemaVersion> schemas;
   private final Destinations destinations;
