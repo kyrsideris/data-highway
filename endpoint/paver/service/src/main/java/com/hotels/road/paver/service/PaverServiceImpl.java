@@ -15,8 +15,6 @@
  */
 package com.hotels.road.paver.service;
 
-import static java.util.Collections.singletonMap;
-
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.ArrayList;
@@ -41,7 +39,6 @@ import com.hotels.road.exception.InvalidSchemaException;
 import com.hotels.road.exception.InvalidSchemaVersionException;
 import com.hotels.road.exception.ServiceException;
 import com.hotels.road.exception.UnknownRoadException;
-import com.hotels.road.model.core.HiveDestination;
 import com.hotels.road.model.core.KafkaStatus;
 import com.hotels.road.model.core.Road;
 import com.hotels.road.model.core.SchemaVersion;
@@ -111,13 +108,6 @@ public class PaverServiceImpl implements PaverService {
 
     road.setMetadata(basicModel.getMetadata());
     road.setCompatibilityMode(Road.DEFAULT_COMPATIBILITY_MODE);
-
-    if (autoCreateHiveDestination) {
-      HiveDestination hive = new HiveDestination();
-      hive.setEnabled(true);
-      hive.setLandingInterval(HiveDestination.DEFAULT_LANDING_INTERVAL);
-      road.setDestinations(singletonMap("hive", hive));
-    }
 
     roadAdminClient.createRoad(road);
     roadSchemaNotificationHandler.handleRoadCreated(road);
