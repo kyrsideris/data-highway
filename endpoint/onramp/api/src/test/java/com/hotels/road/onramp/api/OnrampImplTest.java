@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
+import java.time.Instant;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -43,6 +44,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.primitives.Ints;
 
+import com.hotels.road.model.core.InnerMessage;
 import com.hotels.road.model.core.Road;
 import com.hotels.road.model.core.SchemaVersion;
 
@@ -58,33 +60,34 @@ public class OnrampImplTest {
   private @Mock OnrampSender sender;
   private @Mock Random random;
 
-  private Event event;
+  private OnMessage onMessage;
   private OnrampImpl underTest;
 
   @Before
   public void setUp() {
     when(road.getSchemas()).thenReturn(singletonMap(schemaVersion.getVersion(), schemaVersion));
     when(road.getPartitionPath()).thenReturn("$.udt.user.guid");
+    when(sender.getPartitionCount(eq(road))).thenReturn(1);
     underTest = mock(
         OnrampImpl.class,
         withSettings().useConstructor(road, sender, random).defaultAnswer(CALLS_REAL_METHODS));
-    event = new Event(0, null, mapper.createObjectNode().put("id", 123));
+    onMessage = new OnMessage(0, null, mapper.createObjectNode().put("id", 123));
   }
 
   @Test
   public void sendEvent_calls_sender_correctly() throws Exception {
-    ArgumentCaptor<SenderEvent> eventCaptor = ArgumentCaptor.forClass(SenderEvent.class);
+    ArgumentCaptor<InnerMessage> innerMsgCaptor = ArgumentCaptor.forClass(InnerMessage.class);
     Future<Boolean> future = CompletableFuture.completedFuture(true);
-    when(sender.sendEvent(eq(road), eventCaptor.capture())).thenReturn(future);
+    when(sender.sendInnerMessage(eq(road), innerMsgCaptor.capture())).thenReturn(future);
 
-    Future<Boolean> result = underTest.sendEvent(event);
+    Future<Boolean> result = underTest.sendOnMessage(onMessage, Instant.now());
 
     assertThat(result, is(future));
 
-    SenderEvent senderEvent = eventCaptor.getValue();
-    assertThat(senderEvent.getPartition(), is(0));
-    assertNull(senderEvent.getKey());
-    byte[] message = senderEvent.getMessage();
+    InnerMessage innerMessage = innerMsgCaptor.getValue();
+    assertThat(innerMessage.getPartition(), is(0));
+    assertNull(innerMessage.getKey());
+    byte[] message = innerMessage.getMessage();
     assertThat(message[0], is((byte) 0x00));
     assertThat(Ints.fromBytes(message[1], message[2], message[3], message[4]), is(1));
   }

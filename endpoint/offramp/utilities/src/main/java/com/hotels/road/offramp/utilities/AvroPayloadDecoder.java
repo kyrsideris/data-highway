@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.offramp.kafka;
+package com.hotels.road.offramp.utilities;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -26,10 +26,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.avro.AvroMapper;
 import com.fasterxml.jackson.dataformat.avro.AvroSchema;
 
-class AvroPayloadDecoder {
+public class AvroPayloadDecoder {
   private final AvroMapper avroMapper = new AvroMapper();
 
-  JsonNode decode(Schema schema, byte[] message) {
+  public JsonNode decode(Schema schema, byte[] message) {
     try (InputStream input = new ByteArrayInputStream(message)) {
       return avroMapper.reader(new AvroSchema(schema)).readTree(input);
     } catch (IOException e) {

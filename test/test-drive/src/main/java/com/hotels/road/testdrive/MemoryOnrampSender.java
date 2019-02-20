@@ -17,10 +17,9 @@ package com.hotels.road.testdrive;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Future;
+
+import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,16 +27,21 @@ import com.google.common.util.concurrent.Futures;
 
 import com.hotels.road.model.core.Road;
 import com.hotels.road.onramp.api.OnrampSender;
-import com.hotels.road.onramp.api.SenderEvent;
+import com.hotels.road.model.core.InnerMessage;
 
+@Component
 @RequiredArgsConstructor
-public class MemoryOnramp implements OnrampSender {
-  private final Map<String, List<SenderEvent>> messages;
+public class MemoryOnrampSender implements OnrampSender {
+  private final MemoryRoadPersistence memoryRoadPersistence;
 
   @Override
-  public Future<Boolean> sendEvent(Road road, SenderEvent event) {
-    checkArgument(event.getPartition() == 0);
-    this.messages.computeIfAbsent(road.getName(), name -> new ArrayList<>()).add(event);
+  public Future<Boolean> sendInnerMessage(Road road, InnerMessage message) {
+    checkArgument(message.getPartition() == 0);
+    memoryRoadPersistence.write(road.getName(), // normally we use road.getTopicName(), for test purpose only getName.
+        message.getPartition(),
+        message.getTimestampMs(),
+        message.getKey(),
+        message.getMessage());
     return Futures.immediateFuture(true);
   }
 

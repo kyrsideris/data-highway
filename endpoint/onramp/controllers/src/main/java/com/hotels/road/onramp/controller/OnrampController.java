@@ -18,11 +18,14 @@ package com.hotels.road.onramp.controller;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 
-import static com.google.common.collect.FluentIterable.from;
-
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -33,7 +36,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -48,7 +50,7 @@ import com.hotels.road.exception.InvalidEventException;
 import com.hotels.road.exception.RoadUnavailableException;
 import com.hotels.road.exception.ServiceException;
 import com.hotels.road.exception.UnknownRoadException;
-import com.hotels.road.onramp.api.Event;
+import com.hotels.road.onramp.api.OnMessage;
 import com.hotels.road.onramp.api.Onramp;
 import com.hotels.road.onramp.api.OnrampService;
 import com.hotels.road.rest.model.StandardResponse;
@@ -64,6 +66,7 @@ public class OnrampController {
 
   private final OnrampService service;
   private final MeterRegistry registry;
+  private final Clock clock;
 
   @ApiOperation(value = "Sends a given array of messages to a road")
   @ApiResponses({
@@ -73,9 +76,12 @@ public class OnrampController {
       @ApiResponse(code = 422, message = "Road not enabled.", response = StandardResponse.class) })
   @PreAuthorize("@onrampAuthorisation.isAuthorised(authentication,#roadName)")
   @PostMapping(path = "/v1/roads/{roadName}/messages")
-  public List<StandardResponse> produce(@PathVariable String roadName, @RequestBody Iterable<ObjectNode> events)
+  public List<StandardResponse> produce(@PathVariable String roadName, @RequestBody Iterable<ObjectNode> messages)
       throws UnknownRoadException, InterruptedException {
-    return sendMessages(getOnramp(roadName), from(events).transform(event -> new Event(null, null, event)));
+    return sendMessages(
+        roadName,
+        StreamSupport.stream(messages.spliterator(), false)
+            .map(message -> new OnMessage(null, null, message)));
   }
 
   @ApiOperation(value = "Sends a given array of messages to a road")
@@ -86,10 +92,20 @@ public class OnrampController {
       @ApiResponse(code = 422, message = "Road not enabled.", response = StandardResponse.class) })
   @PreAuthorize("@onrampAuthorisation.isAuthorised(authentication,#roadName)")
   @PostMapping(path = "/v2/roads/{roadName}/messages")
-  public List<StandardResponse> produceV2(@PathVariable String roadName, @RequestBody Iterable<Event> events)
+  public List<StandardResponse> produceV2(@PathVariable String roadName, @RequestBody Iterable<OnMessage> messages)
       throws UnknownRoadException, InterruptedException {
-    return sendMessages(getOnramp(roadName), events);
+    return sendMessages(
+        roadName,
+        StreamSupport.stream(messages.spliterator(), false));
   }
+
+  // TODO: Consider implementation of interface with partition, key and multiple messages
+  // Currently,
+  // - v1, we provide the interface with no partition and key to the user
+  // - v2, we can provide the interface with separate partition and key for every message to the user
+  //      { [ partition: int, key: string, message: string ] }
+  // - v2, we can provide the interface with partition and key for every message to the user
+  //      { partition: int, key: string, messages: [ string ] }
 
   private Onramp getOnramp(String roadName) throws UnknownRoadException {
     Onramp onramp = service.getOnramp(roadName).orElseThrow(() -> new UnknownRoadException(roadName));
@@ -99,11 +115,17 @@ public class OnrampController {
     return onramp;
   }
 
-  private List<StandardResponse> sendMessages(Onramp onramp, Iterable<Event> events) throws InterruptedException {
-    return from(events).transform(onramp::sendEvent).transform(this::translateFuture).toList();
+  private List<StandardResponse> sendMessages(String roadName, Stream<OnMessage> messages)
+      throws ServiceException, UnknownRoadException {
+    Onramp onramp = getOnramp(roadName);
+    Instant time = clock.instant();
+    return messages
+        .map(m -> onramp.sendOnMessage(m, time))
+        .map(this::translateFuture)
+        .collect(Collectors.toList());
   }
 
-  private StandardResponse translateFuture(Future<Boolean> future) {
+  private StandardResponse translateFuture(Future<Boolean> future) throws ServiceException {
     try {
       future.get();
       return StandardResponse.successResponse(MESSAGE_ACCEPTED);

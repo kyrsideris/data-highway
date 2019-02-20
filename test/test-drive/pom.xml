@@ -28,7 +28,17 @@
     </dependency>
     <dependency>
       <groupId>com.hotels.road</groupId>
+      <artifactId>road-onramp-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.hotels.road</groupId>
       <artifactId>road-offramp-service</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.hotels.road</groupId>
+      <artifactId>road-offramp-utilities</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

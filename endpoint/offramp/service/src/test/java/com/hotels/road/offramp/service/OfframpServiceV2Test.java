@@ -99,8 +99,9 @@ public class OfframpServiceV2Test {
   public void run() throws Exception {
     Request request = new Request(1L);
     JsonNode value = mapper.createObjectNode();
-    Payload<JsonNode> payload = new Payload<JsonNode>((byte) 0, 2, value);
-    Record record = new Record(0, 1L, 3L, payload);
+    String key = "this key";
+    Payload<JsonNode> payload = new Payload<>((byte) 0, 2, value);
+    Record record = new Record(0, 1L, 3L, key, payload);
 
     doNothing().when(underTest).sendEvent(any());
     doNothing().when(underTest).sendRebalance(any());
@@ -201,8 +202,9 @@ public class OfframpServiceV2Test {
 
   @Test
   public void replenishBuffer() throws Exception {
+    String key = "this key";
     Payload<JsonNode> payload = new Payload<JsonNode>((byte) 0, 1, mapper.createObjectNode());
-    Record record = new Record(0, 1L, 3L, payload);
+    Record record = new Record(0, 1L, 3L, key, payload);
     List<Record> records = singletonList(record);
 
     doReturn(records).when(consumer).poll();
@@ -223,9 +225,10 @@ public class OfframpServiceV2Test {
 
   @Test
   public void sendMessage() throws Exception {
+    String key = "this key";
     JsonNode value = mapper.createObjectNode();
     Payload<JsonNode> payload = new Payload<JsonNode>((byte) 0, 2, value);
-    Record record = new Record(0, 1L, 3L, payload);
+    Record record = new Record(0, 1L, 3L, key, payload);
     Message<JsonNode> message = new Message<>(0, 1L, 2, 3L, value);
 
     doReturn(value).when(messageFunction).apply(payload);

@@ -29,7 +29,7 @@ import com.google.common.util.concurrent.Futures;
 
 import com.hotels.road.model.core.Road;
 import com.hotels.road.onramp.api.OnrampSender;
-import com.hotels.road.onramp.api.SenderEvent;
+import com.hotels.road.model.core.InnerMessage;
 import com.hotels.road.partition.KeyPathParser;
 import com.hotels.road.partition.KeyPathParser.Path;
 
@@ -44,12 +44,13 @@ public class KafkaOnrampSender implements OnrampSender {
   }
 
   @Override
-  public Future<Boolean> sendEvent(Road road, SenderEvent event) {
+  public Future<Boolean> sendInnerMessage(Road road, InnerMessage message) {
     ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(
         road.getTopicName(),
-        event.getPartition(),
-        event.getKey(),
-        event.getMessage());
+        message.getPartition(),
+        message.getTimestampMs(),
+        message.getKey(),
+        message.getMessage());
     Future<RecordMetadata> future = kafkaProducer
         .send(record, (metadata, e) -> updateMetrics(road.getName(), metadata, e));
     return Futures.lazyTransform(future, metadata -> true);

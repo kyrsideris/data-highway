@@ -23,11 +23,11 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class EventTest {
+public class OnMessageTest {
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
-  public void event_seserialisation_test() throws Exception {
+  public void serialisation_test() throws Exception {
     String jsonText = "{\n"
         + "  \"partition\": 1,\n"
         + "  \"key\": \"123\",\n"
@@ -36,15 +36,15 @@ public class EventTest {
         + "  }\n"
         + "}";
 
-    Event event = mapper.readValue(jsonText, Event.class);
+    OnMessage onMessage = mapper.readValue(jsonText, OnMessage.class);
 
-    assertThat(event.getPartition(), is(1));
-    assertThat(event.getKey(), is("123"));
-    assertThat(event.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
+    assertThat(onMessage.getPartition(), is(1));
+    assertThat(onMessage.getKey(), is("123"));
+    assertThat(onMessage.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
   }
 
   @Test
-  public void event_with_null_partition() throws Exception {
+  public void with_null_partition() throws Exception {
     String jsonText = "{\n"
         + "  \"partition\": null,\n"
         + "  \"key\": \"123\",\n"
@@ -53,15 +53,15 @@ public class EventTest {
         + "  }\n"
         + "}";
 
-    Event event = mapper.readValue(jsonText, Event.class);
+    OnMessage onMessage = mapper.readValue(jsonText, OnMessage.class);
 
-    assertThat(event.getPartition(), is(nullValue()));
-    assertThat(event.getKey(), is("123"));
-    assertThat(event.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
+    assertThat(onMessage.getPartition(), is(nullValue()));
+    assertThat(onMessage.getKey(), is("123"));
+    assertThat(onMessage.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
   }
 
   @Test
-  public void event_with_null_key() throws Exception {
+  public void with_null_key() throws Exception {
     String jsonText = "{\n"
         + "  \"partition\": 1,\n"
         + "  \"key\": null,\n"
@@ -70,25 +70,25 @@ public class EventTest {
         + "  }\n"
         + "}";
 
-    Event event = mapper.readValue(jsonText, Event.class);
+    OnMessage onMessage = mapper.readValue(jsonText, OnMessage.class);
 
-    assertThat(event.getPartition(), is(1));
-    assertThat(event.getKey(), is(nullValue()));
-    assertThat(event.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
+    assertThat(onMessage.getPartition(), is(1));
+    assertThat(onMessage.getKey(), is(nullValue()));
+    assertThat(onMessage.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
   }
 
   @Test
-  public void event_with_null_message() throws Exception {
+  public void with_null_message() throws Exception {
     String jsonText = "{\n"
         + "  \"partition\": 1,\n"
         + "  \"key\": \"123\",\n"
         + "  \"message\": null\n"
         + "}";
 
-    Event event = mapper.readValue(jsonText, Event.class);
+    OnMessage onMessage = mapper.readValue(jsonText, OnMessage.class);
 
-    assertThat(event.getPartition(), is(1));
-    assertThat(event.getKey(), is("123"));
-    assertThat(event.getMessage(), is(nullValue()));
+    assertThat(onMessage.getPartition(), is(1));
+    assertThat(onMessage.getKey(), is("123"));
+    assertThat(onMessage.getMessage(), is(nullValue()));
   }
 }

@@ -30,6 +30,8 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
@@ -56,7 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 import com.hotels.road.exception.InvalidEventException;
 import com.hotels.road.exception.ServiceException;
 import com.hotels.road.model.core.SchemaVersion;
-import com.hotels.road.onramp.api.Event;
+import com.hotels.road.onramp.api.OnMessage;
 import com.hotels.road.onramp.api.Onramp;
 import com.hotels.road.onramp.api.OnrampService;
 import com.hotels.road.rest.controller.common.GlobalExceptionHandler;
@@ -76,9 +78,13 @@ public class OnrampControllerTest {
     public @Bean MeterRegistry testMeterRegistry() {
       return registry;
     }
+
+    public @Bean Clock clock() {
+      return Clock.systemDefaultZone();
+    }
   }
 
-  private static final String INVALID_EVENT_DETAIL = "Invalid Event";
+  private static final String INVALID_EVENT_DETAIL = "Invalid OnMessage";
   private static final String ERROR_SENT = "An error occured while posting an event";
   private static final String NON_EXISTENT_ROAD = "non_existent_road";
   private static final String PRESENT_ROAD = "present_road";
@@ -119,17 +125,17 @@ public class OnrampControllerTest {
         .setControllerAdvice(globalExceptionHandler)
         .setMessageConverters(new MappingJackson2HttpMessageConverter())
         .build();
-    when(onramp.sendEvent(any(Event.class))).thenAnswer(this::mockSend);
+    when(onramp.sendOnMessage(any(OnMessage.class), any(Instant.class))).thenAnswer(this::mockSend);
     when(onramp.isAvailable()).thenReturn(true);
     when(onramp.getSchemaVersion()).thenReturn(schemaVersion);
-    when(errorOnramp.sendEvent(any(Event.class))).thenReturn(immediateFailedFuture(new ServiceException(ERROR_SENT)));
+    when(errorOnramp.sendOnMessage(any(OnMessage.class), any(Instant.class))).thenReturn(immediateFailedFuture(new ServiceException(ERROR_SENT)));
     when(errorOnramp.isAvailable()).thenReturn(true);
     when(closedOnramp.isAvailable()).thenReturn(false);
   }
 
   Future<Boolean> mockSend(InvocationOnMock a) {
-    Event event = (Event) (a.getArgument(0));
-    if (event.getMessage().get("valid").asBoolean()) {
+    OnMessage onMessage = (OnMessage) (a.getArgument(0));
+    if (onMessage.getMessage().get("valid").asBoolean()) {
       return immediateFuture(true);
     } else {
       return immediateFailedFuture(new InvalidEventException(INVALID_EVENT_DETAIL));
@@ -242,7 +248,7 @@ public class OnrampControllerTest {
     mockMvc
         .perform(post(PRESENT_ROAD_URI).content("[{\"valid\":false}]").contentType(APPLICATION_JSON_UTF8))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].message", is("The event failed validation. Invalid Event")))
+        .andExpect(jsonPath("$[0].message", is("The event failed validation. Invalid OnMessage")))
         .andExpect(jsonPath("$[0].success", is(false)));
   }
 
@@ -268,7 +274,7 @@ public class OnrampControllerTest {
         .perform(
             post(PRESENT_ROAD_URI).content("[{\"valid\":false},{\"valid\":true}]").contentType(APPLICATION_JSON_UTF8))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].message", is("The event failed validation. Invalid Event")))
+        .andExpect(jsonPath("$[0].message", is("The event failed validation. Invalid OnMessage")))
         .andExpect(jsonPath("$[0].success", is(false)))
         .andExpect(jsonPath("$[1].message", is("Message accepted.")))
         .andExpect(jsonPath("$[1].success", is(true)));
@@ -294,7 +300,7 @@ public class OnrampControllerTest {
     given(onrampService.getOnramp(PRESENT_ROAD)).willReturn(Optional.of(onramp));
     given(onramp.isAvailable()).willReturn(true);
     given(onramp.getSchemaVersion()).willReturn(schemaVersion);
-    given(onramp.sendEvent(any(Event.class))).willReturn(future);
+    given(onramp.sendOnMessage(any(OnMessage.class), any(Instant.class))).willReturn(future);
     given(future.get()).willThrow(new InterruptedException("foo"));
 
     mockMvc

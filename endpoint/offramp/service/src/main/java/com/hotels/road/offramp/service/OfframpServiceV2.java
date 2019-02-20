@@ -169,6 +169,8 @@ public class OfframpServiceV2 implements OfframpService {
   void sendMessage(Record record) {
     Message<JsonNode> message = metrics.record(MESSAGE, () -> {
       Payload<JsonNode> payload = record.getPayload();
+
+      // TODO for compacted logs: Add key on version v3 of offramp service
       return new Message<>(record.getPartition(), record.getOffset(), payload.getSchemaVersion(),
           record.getTimestampMs(), messageFunction.apply(payload));
     });

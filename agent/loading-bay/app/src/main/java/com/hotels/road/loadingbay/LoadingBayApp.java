@@ -61,6 +61,7 @@ import com.hotels.road.loadingbay.model.HiveRoad;
 import com.hotels.road.loadingbay.model.HiveStatus;
 import com.hotels.road.notification.NotificationConfiguration;
 import com.hotels.road.notification.sns.config.SnsConfiguration;
+import com.hotels.road.rest.controller.common.CommonClockConfiguration;
 import com.hotels.road.schema.serde.SchemaSerializationModule;
 import com.hotels.road.tollbooth.client.spi.PatchSetEmitter;
 
@@ -70,7 +71,8 @@ import com.hotels.road.tollbooth.client.spi.PatchSetEmitter;
     KubernetesConfiguration.class,
     TrafficCopConfiguration.class,
     NotificationConfiguration.class,
-    SnsConfiguration.class })
+    SnsConfiguration.class,
+    CommonClockConfiguration.class })
 public class LoadingBayApp {
   @Bean
   public ObjectMapper mapper() {
@@ -134,11 +136,6 @@ public class LoadingBayApp {
       @Value("${hive.database}") String database,
       Clock clock) {
     return new HivePartitionManager(metaStoreClient, locationResolver, database, clock);
-  }
-
-  @Bean
-  public Clock clock() {
-    return Clock.systemUTC();
   }
 
   @Bean

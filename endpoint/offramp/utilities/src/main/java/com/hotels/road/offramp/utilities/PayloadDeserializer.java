@@ -13,15 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.onramp.api;
+package com.hotels.road.offramp.utilities;
 
-import lombok.Value;
-import lombok.experimental.Wither;
+import java.nio.ByteBuffer;
 
-@Value
-@Wither
-public class SenderEvent {
-  int partition;
-  byte[] key;
-  byte[] message;
+import com.hotels.road.offramp.api.Payload;
+
+public class PayloadDeserializer implements BaseDeserializer<Payload<byte[]>> {
+  @Override
+  public Payload<byte[]> deserialize(String topic, byte[] data) {
+    ByteBuffer buffer = ByteBuffer.wrap(data);
+    byte formatVersion = buffer.get();
+    int schemaVersion = buffer.getInt();
+    byte[] message = new byte[buffer.remaining()];
+    buffer.get(message);
+    return new Payload<>(formatVersion, schemaVersion, message);
+  }
 }

@@ -13,17 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.offramp.api;
+package com.hotels.road.offramp.utilities;
 
-import lombok.Value;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
-@Value
-public class Record {
-  int partition;
-  long offset;
-  long timestampMs;
-  String key;
-  Payload<JsonNode> payload;
+public interface BaseDeserializer<T> {
+  /**
+   * Deserialize a record value from a byte array into a value or object.
+   * @param topic topic associated with the data
+   * @param data serialized bytes; may be null; implementations are recommended to handle null by returning a value or null rather than throwing an exception.
+   * @return deserialized typed data; may be null
+   */
+  T deserialize(String topic, byte[] data);
 }

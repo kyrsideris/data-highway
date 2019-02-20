@@ -65,10 +65,11 @@ import com.hotels.road.offramp.api.SchemaProvider;
 import com.hotels.road.offramp.kafka.KafkaRoadConsumer.KafkaRebalanceListener;
 import com.hotels.road.offramp.model.DefaultOffset;
 import com.hotels.road.offramp.spi.RoadConsumer.RebalanceListener;
+import com.hotels.road.offramp.utilities.AvroPayloadDecoder;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class KafkaRoadConsumerTest {
-  private @Mock Consumer<Void, Payload<byte[]>> consumer;
+  private @Mock Consumer<String, Payload<byte[]>> consumer;
   private @Mock SchemaProvider schemaProvider;
   private @Mock AvroPayloadDecoder payloadDecoder;
   private @Mock RebalanceListener rebalanceListener;
@@ -101,17 +102,21 @@ public class KafkaRoadConsumerTest {
 
   @Test
   public void poll() throws Exception {
+    String key = "this key";
     Payload<byte[]> payload = new Payload<>((byte) 0, 1, "{}".getBytes(UTF_8));
-    ConsumerRecord<Void, Payload<byte[]>> consumerRecord = new ConsumerRecord<>(topicName, 0, 1L, 2L,
-        TimestampType.CREATE_TIME, ConsumerRecord.NULL_CHECKSUM, ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE,
-        null, payload);
-    Map<TopicPartition, List<ConsumerRecord<Void, Payload<byte[]>>>> recordsMaps = singletonMap(topicPartition,
-        singletonList(consumerRecord));
-    ConsumerRecords<Void, Payload<byte[]>> records = new ConsumerRecords<>(recordsMaps);
+
+    ConsumerRecord<String, Payload<byte[]>> consumerRecord =
+        new ConsumerRecord<>(topicName, 0, 1L, 2L,
+            TimestampType.CREATE_TIME, ConsumerRecord.NULL_CHECKSUM, ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE,
+            key, payload);
+    Map<TopicPartition, List<ConsumerRecord<String, Payload<byte[]>>>> recordsMaps =
+        singletonMap(topicPartition, singletonList(consumerRecord));
+    ConsumerRecords<String, Payload<byte[]>> records = new ConsumerRecords<>(recordsMaps);
+
     when(consumer.poll(100)).thenReturn(records);
     when(payloadDecoder.decode(any(), any())).thenReturn(mapper.createObjectNode());
 
-    Record record = new Record(0, 1L, 2L, new Payload<JsonNode>((byte) 0, 1, mapper.createObjectNode()));
+    Record record = new Record(0, 1L, 2L, key, new Payload<>((byte) 0, 1, mapper.createObjectNode()));
 
     underTest.init(1L, rebalanceListener);
     Iterable<Record> result = underTest.poll();

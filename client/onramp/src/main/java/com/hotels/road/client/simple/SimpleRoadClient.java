@@ -110,8 +110,12 @@ public class SimpleRoadClient<T> implements RoadClient<T> {
     this(toOptions(host, username, password, roadName, threads, tlsConfig, objectMapper));
   }
 
+  public SimpleRoadClient(OnrampOptions options, String version) {
+    this(HttpHandler.onramp(options, version), options.getRoadName(), options.getObjectMapper());
+  }
+
   public SimpleRoadClient(OnrampOptions options) {
-    this(HttpHandler.onramp(options), options.getRoadName(), options.getObjectMapper());
+    this(options, "v1");
   }
 
   @Override

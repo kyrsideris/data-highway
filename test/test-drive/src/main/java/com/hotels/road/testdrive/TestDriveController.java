@@ -37,11 +37,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.hotels.road.model.core.Road;
 import com.hotels.road.offramp.api.Payload;
 import com.hotels.road.offramp.api.Record;
-import com.hotels.road.testdrive.MemoryRoadConsumer.StreamKey;
+import com.hotels.road.testdrive.MemoryRoadPersistence.StreamKey;
 
 @Api(tags = "testdrive")
 @RestController
-@RequestMapping("/testdrive/v1")
+@RequestMapping("/testdrive")
 class TestDriveController {
   private final Map<String, Road> store;
   private final @Value("#{messages}") Map<String, List<Record>> messages;
@@ -57,8 +57,8 @@ class TestDriveController {
   }
 
   @ApiOperation("Gets all messages for the given road")
-  @GetMapping("/roads/{roadName}/messages")
-  List<JsonNode> getMessages(@PathVariable String roadName) {
+  @GetMapping("/v1/roads/{roadName}/messages")
+  List<JsonNode> getMessagesV1(@PathVariable String roadName) {
     return messages
         .getOrDefault(roadName, emptyList())
         .stream()
@@ -68,7 +68,7 @@ class TestDriveController {
   }
 
   @ApiOperation("Deletes all data")
-  @DeleteMapping("/roads")
+  @DeleteMapping("/v1/roads")
   void deleteAll() {
     store.clear();
     messages.clear();
@@ -76,21 +76,21 @@ class TestDriveController {
   }
 
   @ApiOperation("Deletes all data for the given road")
-  @DeleteMapping("/roads/{roadName}")
+  @DeleteMapping("/v1/roads/{roadName}")
   void deleteRoad(@PathVariable String roadName) {
     store.remove(roadName);
     deleteMessages(roadName);
   }
 
   @ApiOperation("Deletes all messages for the given road")
-  @DeleteMapping("/roads/{roadName}/messages")
+  @DeleteMapping("/v1/roads/{roadName}/messages")
   void deleteMessages(@PathVariable String roadName) {
     messages.remove(roadName);
     commits.keySet().stream().filter(k -> k.getRoadName().equals(roadName)).forEach(commits::remove);
   }
 
   @ApiOperation("Deletes all commits for the given stream")
-  @DeleteMapping("/roads/{roadName}/streams/{streamName}/messages")
+  @DeleteMapping("/v1/roads/{roadName}/streams/{streamName}/messages")
   void deleteCommits(@PathVariable String roadName, @PathVariable String streamName) {
     commits.remove(new StreamKey(roadName, streamName));
   }

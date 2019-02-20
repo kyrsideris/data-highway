@@ -47,7 +47,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotels.road.model.core.Road;
 import com.hotels.road.offramp.api.Payload;
 import com.hotels.road.offramp.api.Record;
-import com.hotels.road.testdrive.MemoryRoadConsumer.StreamKey;
+import com.hotels.road.testdrive.MemoryRoadPersistence.StreamKey;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = TestDriveController.class)
@@ -80,8 +80,9 @@ public class TestDriveControllerTest {
 
   @Test
   public void getMessages() throws Exception {
+    String key = "this key";
     JsonNode node = mapper.createObjectNode().put("foo", "bar");
-    doReturn(singletonList(new Record(0, 1, 2L, new Payload<JsonNode>((byte) 0, 1, node)))).when(messages).getOrDefault(
+    doReturn(singletonList(new Record(0, 1, 2L, key, new Payload<JsonNode>((byte) 0, 1, node)))).when(messages).getOrDefault(
         "road1", emptyList());
     mockMvc.perform(get("/testdrive/v1/roads/road1/messages")).andExpect(status().isOk()).andExpect(
         content().json("[{\"foo\":\"bar\"}]"));

@@ -15,24 +15,9 @@
  */
 package com.hotels.road.offramp.kafka;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-
-import org.junit.Test;
-
 import com.hotels.road.offramp.api.Payload;
+import com.hotels.road.offramp.utilities.PayloadDeserializer;
 
-public class KafkaPayloadDeserializerTest {
-
-  @SuppressWarnings("resource")
-  @Test
-  public void test() {
-    byte[] data = new byte[] { 0, 0, 0, 0, 1, 2, 3, 4, 5 };
-
-    Payload<byte[]> payload = new PayloadDeserializer().deserialize("topic", data);
-
-    assertThat(payload.getFormatVersion(), is((byte) 0));
-    assertThat(payload.getSchemaVersion(), is(1));
-    assertThat(payload.getMessage(), is(new byte[] { 2, 3, 4, 5 }));
-  }
-}
+public class PayloadKafkaDeserializer
+    extends PayloadDeserializer
+    implements BaseKafkaDeserializer<Payload<byte[]>> {}

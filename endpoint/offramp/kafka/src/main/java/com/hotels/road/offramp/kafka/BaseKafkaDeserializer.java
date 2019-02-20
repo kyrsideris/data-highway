@@ -15,18 +15,16 @@
  */
 package com.hotels.road.offramp.kafka;
 
-import java.nio.ByteBuffer;
+import java.util.Map;
 
-import com.hotels.road.offramp.api.Payload;
+import org.apache.kafka.common.serialization.Deserializer;
 
-class PayloadDeserializer implements BaseDeserializer<Payload<byte[]>> {
+import com.hotels.road.offramp.utilities.BaseDeserializer;
+
+interface BaseKafkaDeserializer<T> extends Deserializer<T>, BaseDeserializer<T> {
   @Override
-  public Payload<byte[]> deserialize(String topic, byte[] data) {
-    ByteBuffer buffer = ByteBuffer.wrap(data);
-    byte formatVersion = buffer.get();
-    int schemaVersion = buffer.getInt();
-    byte[] message = new byte[buffer.remaining()];
-    buffer.get(message);
-    return new Payload<>(formatVersion, schemaVersion, message);
-  }
+  default void configure(Map<String, ?> configs, boolean isKey) {}
+
+  @Override
+  default void close() {}
 }

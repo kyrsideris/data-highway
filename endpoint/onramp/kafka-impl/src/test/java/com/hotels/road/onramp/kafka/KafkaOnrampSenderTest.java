@@ -50,7 +50,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.hotels.road.exception.InvalidEventException;
 import com.hotels.road.model.core.Road;
-import com.hotels.road.onramp.api.SenderEvent;
+import com.hotels.road.model.core.InnerMessage;
 import com.hotels.road.partition.KeyPathParser;
 import com.hotels.road.partition.KeyPathParser.Path;
 
@@ -94,7 +94,7 @@ public class KafkaOnrampSenderTest {
     when(kafkaProducer.send(any(ProducerRecord.class), any(Callback.class))).thenReturn(future);
     doThrow(new ExecutionException(new BufferExhaustedException("exhausted"))).when(future).get();
 
-    Future<Boolean> result = underTest.sendEvent(road, new SenderEvent(0, new byte[0], new byte[0]));
+    Future<Boolean> result = underTest.sendInnerMessage(road, new InnerMessage(0, 1550482463, new byte[0], new byte[0]));
 
     try {
       result.get();
@@ -111,7 +111,7 @@ public class KafkaOnrampSenderTest {
     throws InvalidEventException, InterruptedException, ExecutionException, JsonProcessingException, IOException {
     when(kafkaProducer.send(any(ProducerRecord.class), any(Callback.class))).thenReturn(future);
 
-    Future<Boolean> result = underTest.sendEvent(road, new SenderEvent(0, new byte[0], new byte[0]));
+    Future<Boolean> result = underTest.sendInnerMessage(road, new InnerMessage(0, 1550482463, new byte[0], new byte[0]));
 
     assertThat(result.get(), is(true));
   }
@@ -127,7 +127,7 @@ public class KafkaOnrampSenderTest {
       return future;
     });
 
-    underTest.sendEvent(road, new SenderEvent(0, new byte[0], new byte[0]));
+    underTest.sendInnerMessage(road, new InnerMessage(0, 1550482463, new byte[0], new byte[0]));
 
     verify(metrics).markSuccessMetrics(ROAD_NAME, 1);
   }
@@ -143,7 +143,7 @@ public class KafkaOnrampSenderTest {
       return future;
     });
 
-    underTest.sendEvent(road, new SenderEvent(0, new byte[0], new byte[0]));
+    underTest.sendInnerMessage(road, new InnerMessage(0, 1550482463, new byte[0], new byte[0]));
 
     verify(metrics).markFailureMetrics(ROAD_NAME);
   }
@@ -154,8 +154,8 @@ public class KafkaOnrampSenderTest {
     ArgumentCaptor<ProducerRecord> captor = ArgumentCaptor.forClass(ProducerRecord.class);
     when(kafkaProducer.send(captor.capture(), any(Callback.class))).thenReturn(future);
 
-    underTest.sendEvent(road, new SenderEvent(0, new byte[0], new byte[] { 0x01, 0x02 }));
-    underTest.sendEvent(road, new SenderEvent(0, new byte[0], new byte[] { 0x03, 0x04 }));
+    underTest.sendInnerMessage(road, new InnerMessage(0, 1550482463, new byte[0], new byte[] { 0x01, 0x02 }));
+    underTest.sendInnerMessage(road, new InnerMessage(0, 1550482463, new byte[0], new byte[] { 0x03, 0x04 }));
 
     List<ProducerRecord> values = captor.getAllValues();
 

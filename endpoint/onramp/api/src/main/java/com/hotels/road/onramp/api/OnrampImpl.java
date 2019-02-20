@@ -22,6 +22,7 @@ import static com.google.common.primitives.Ints.toByteArray;
 import static com.hotels.road.onramp.api.Utils.murmur2;
 import static com.hotels.road.onramp.api.Utils.toPositive;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.Future;
@@ -36,6 +37,7 @@ import com.google.common.util.concurrent.Futures;
 import com.hotels.jasvorno.JasvornoConverterException;
 import com.hotels.road.exception.InvalidEventException;
 import com.hotels.road.exception.RoadUnavailableException;
+import com.hotels.road.model.core.InnerMessage;
 import com.hotels.road.model.core.Road;
 import com.hotels.road.model.core.SchemaVersion;
 import com.hotels.road.partition.KeyPathParser;
@@ -85,23 +87,39 @@ public class OnrampImpl implements Onramp {
   }
 
   @Override
-  public Future<Boolean> sendEvent(Event event) {
+  public Future<Boolean> sendOnMessage(OnMessage onMessage, Instant time) {
+    long now = time.toEpochMilli();
     try {
-      if (event.getMessage() == null && road.getType() != RoadType.COMPACT) {
-        new InvalidEventException("Event must contain a message");
-      }
 
-      if (event.getKey() == null && road.getType() == RoadType.COMPACT) {
-        new InvalidEventException("Compact roads must specify a key");
+      // The following permutations are allowed:
+      // nullable: null or not null
+      //
+      // Type of Road | partition | key      |  message
+      // -------------|-----------|----------|-----------
+      //  NORMAL      | nullable  | nullable |  not null
+      //  COMPACT     | null      | not null |  nullable
+
+      if (road.getType() == RoadType.NORMAL) {
+        if (onMessage.getMessage() == null) {
+          throw new InvalidEventException("OnMessage must contain a message");
+        }
+      }
+      else if (road.getType() == RoadType.COMPACT){
+        if (onMessage.getPartition() != null) {
+          throw new InvalidEventException("Compact roads cannot specify partition");
+        }
+        if (onMessage.getKey() == null) {
+          throw new InvalidEventException("Compact roads must specify a key");
+        }
       }
 
       try {
-        int partition = calculatePartition(event);
-        byte[] key = keyEncoder.apply(event.getKey());
-        byte[] message = valueEncoder.apply(event.getMessage());
-        SenderEvent senderEvent = new SenderEvent(partition, key, message);
+        int partition = calculatePartition(onMessage);
+        byte[] key = keyEncoder.apply(onMessage.getKey());
+        byte[] message = valueEncoder.apply(onMessage.getMessage());
+        InnerMessage innerMessage = new InnerMessage(partition, now, key, message);
 
-        return sender.sendEvent(road, senderEvent);
+        return sender.sendInnerMessage(road, innerMessage);
       } catch (JasvornoConverterException e) {
         throw new InvalidEventException(e.getMessage());
       }
@@ -110,20 +128,30 @@ public class OnrampImpl implements Onramp {
     }
   }
 
-  private int calculatePartition(Event event) {
-    if (event.getPartition() != null) {
-      return event.getPartition();
+  private int calculatePartition(OnMessage onMessage) throws InvalidEventException {
+
+    Integer partition = onMessage.getPartition();
+    // TODO: COMPACTED throw and out of range exception for partition greater than available
+    if (partition != null) {
+      if (partition >= partitions) {
+        throw new InvalidEventException(
+            String.format("OnMessage with partition id %d exceeds range [0-%d] for road %s",
+                partition, partitions - 1, road.getName()));
+      }
+      else {
+        return onMessage.getPartition();
+      }
     }
 
-    if (event.getKey() != null) {
-      return event.getKey().hashCode() % partitions;
+    if (onMessage.getKey() != null) {
+      return onMessage.getKey().hashCode() % partitions;
     }
 
     if (road.getPartitionPath() == null || road.getPartitionPath().isEmpty()) {
       return random.nextInt(partitions);
     }
 
-    JsonNode partitionValue = partitionNodeFunction.apply(event.getMessage());
+    JsonNode partitionValue = partitionNodeFunction.apply(onMessage.getMessage());
 
     if (partitionValue == null || partitionValue.isMissingNode()) {
       return random.nextInt(partitions);

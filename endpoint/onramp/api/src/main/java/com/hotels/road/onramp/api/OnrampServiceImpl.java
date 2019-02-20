@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.onramp.kafka;
+package com.hotels.road.onramp.api;
 
 import static java.util.Optional.ofNullable;
 
@@ -25,10 +25,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.hotels.road.model.core.Road;
-import com.hotels.road.onramp.api.Onramp;
-import com.hotels.road.onramp.api.OnrampImpl;
-import com.hotels.road.onramp.api.OnrampSender;
-import com.hotels.road.onramp.api.OnrampService;
 
 @Component
 public class OnrampServiceImpl implements OnrampService {

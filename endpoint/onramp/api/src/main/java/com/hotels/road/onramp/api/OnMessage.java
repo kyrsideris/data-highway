@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.offramp.kafka;
+package com.hotels.road.onramp.api;
 
-import java.util.Map;
+import lombok.Value;
 
-import org.apache.kafka.common.serialization.Deserializer;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
-interface BaseDeserializer<T> extends Deserializer<T> {
-  @Override
-  default void configure(Map<String, ?> configs, boolean isKey) {}
-
-  @Override
-  default void close() {}
+@Value
+public class OnMessage {
+  Integer partition;
+  String key;
+  ObjectNode message;
 }

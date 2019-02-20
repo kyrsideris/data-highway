@@ -17,10 +17,11 @@ package com.hotels.road.onramp.api;
 
 import java.util.concurrent.Future;
 
+import com.hotels.road.model.core.InnerMessage;
 import com.hotels.road.model.core.Road;
 
 public interface OnrampSender {
   int getPartitionCount(Road road);
 
-  Future<Boolean> sendEvent(Road road, SenderEvent event);
+  Future<Boolean> sendInnerMessage(Road road, InnerMessage message);
 }

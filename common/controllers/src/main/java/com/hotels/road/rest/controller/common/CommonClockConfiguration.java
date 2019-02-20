@@ -13,15 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.onramp.api;
+package com.hotels.road.rest.controller.common;
 
-import lombok.Value;
+import java.time.Clock;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-@Value
-public class Event {
-  Integer partition;
-  String key;
-  ObjectNode message;
+@Configuration
+public class CommonClockConfiguration {
+  @Bean
+  public Clock clock() {
+    return Clock.systemUTC();
+  }
 }
