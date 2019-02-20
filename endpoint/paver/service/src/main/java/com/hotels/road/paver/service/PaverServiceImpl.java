@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import org.apache.avro.Schema;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.hotels.road.exception.InvalidKeyPathException;
@@ -70,7 +69,6 @@ public class PaverServiceImpl implements PaverService {
   private final CidrBlockValidator cidrBlockBValidator;
   private final Map<String, PatchMapping> patchMappings;
   private final RoadSchemaNotificationHandler roadSchemaNotificationHandler;
-  private final boolean autoCreateHiveDestination;
 
   @Autowired
   public PaverServiceImpl(
@@ -78,14 +76,11 @@ public class PaverServiceImpl implements PaverService {
       SchemaStoreClient schemaStoreClient,
       CidrBlockValidator cidrBlockBValidator,
       List<PatchMapping> mappings,
-      RoadSchemaNotificationHandler roadSchemaNotificationHandler,
-      @Value("${destinations.hive.autoCreate:true}") boolean autoCreateHiveDestination) {
+      RoadSchemaNotificationHandler roadSchemaNotificationHandler) {
     this.roadAdminClient = roadAdminClient;
     this.schemaStoreClient = schemaStoreClient;
     this.cidrBlockBValidator = cidrBlockBValidator;
     this.roadSchemaNotificationHandler = roadSchemaNotificationHandler;
-    this.autoCreateHiveDestination = autoCreateHiveDestination;
-
     patchMappings = mappings.stream().collect(Collectors.toMap(PatchMapping::getPath, m -> m));
   }
 
@@ -213,12 +208,6 @@ public class PaverServiceImpl implements PaverService {
     return schemaVersion;
   }
 
-  @FunctionalInterface
-  private static interface CheckedFunction<F, T> {
-
-    T apply(F f) throws UnknownRoadException, ServiceException;
-  }
-
   private Road getRoadOrThrow(String name) throws UnknownRoadException {
     return roadAdminClient.getRoad(RoadNameValidator.validateRoadName(name)).orElseThrow(
         () -> new UnknownRoadException(name));
@@ -248,4 +237,12 @@ public class PaverServiceImpl implements PaverService {
     schemaStoreClient.deleteSchemaVersion(name, version);
     roadSchemaNotificationHandler.handleSchemaDeleted(name, version);
   }
+
+  @FunctionalInterface
+  private interface CheckedFunction<F, T> {
+
+    T apply(F f) throws UnknownRoadException, ServiceException;
+
+  }
+
 }

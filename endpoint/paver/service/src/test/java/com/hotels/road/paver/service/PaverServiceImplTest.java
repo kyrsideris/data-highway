@@ -18,7 +18,6 @@ package com.hotels.road.paver.service;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -107,7 +106,7 @@ public class PaverServiceImplTest {
     road.getAuthorisation().setOfframp(new Offramp());
     road.getAuthorisation().getOfframp().setAuthorities(emptyMap());
     underTest = new PaverServiceImpl(roadAdminClient, schemaStoreClient, cidrBlockValidator, mappings,
-        notificationHandler, true);
+        notificationHandler);
   }
 
   @Test
@@ -147,10 +146,7 @@ public class PaverServiceImplTest {
     HiveDestination hive = new HiveDestination();
     hive.setEnabled(true);
     hive.setLandingInterval(HiveDestination.DEFAULT_LANDING_INTERVAL);
-    road.setDestinations(singletonMap("hive", hive));
-
     road.getAuthorisation().getOnramp().setCidrBlocks(singletonList("0.0.0.0/0"));
-
     BasicRoadModel model = new BasicRoadModel(road.getName(), road.getDescription(), road.getTeamName(),
         road.getContactEmail(), road.isEnabled(), road.getPartitionPath(), road.getAuthorisation(), road.getMetadata());
     underTest.createRoad(model);
@@ -167,8 +163,6 @@ public class PaverServiceImplTest {
     HiveDestination hive = new HiveDestination();
     hive.setEnabled(true);
     hive.setLandingInterval(HiveDestination.DEFAULT_LANDING_INTERVAL);
-    road.setDestinations(singletonMap("hive", hive));
-
     road.getAuthorisation().getOnramp().setCidrBlocks(emptyList());
     road.getAuthorisation().getOnramp().setAuthorities(emptyList());
     road.getAuthorisation().getOfframp().setAuthorities(emptyMap());
@@ -188,7 +182,7 @@ public class PaverServiceImplTest {
     BasicRoadModel model = new BasicRoadModel(road.getName(), road.getDescription(), road.getTeamName(),
         road.getContactEmail(), road.isEnabled(), road.getPartitionPath(), null, road.getMetadata());
     underTest = new PaverServiceImpl(roadAdminClient, schemaStoreClient, cidrBlockValidator, mappings,
-        notificationHandler, false);
+        notificationHandler);
     underTest.createRoad(model);
     ArgumentCaptor<Road> captor = ArgumentCaptor.forClass(Road.class);
     verify(roadAdminClient).createRoad(captor.capture());
