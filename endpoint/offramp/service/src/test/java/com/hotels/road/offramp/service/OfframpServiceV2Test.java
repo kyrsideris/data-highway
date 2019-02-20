@@ -33,14 +33,14 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
-import static reactor.core.scheduler.Schedulers.single;
-
 import static com.hotels.road.offramp.metrics.TimerTag.BUFFER;
 import static com.hotels.road.offramp.metrics.TimerTag.COMMIT;
 import static com.hotels.road.offramp.metrics.TimerTag.ENCODE;
 import static com.hotels.road.offramp.metrics.TimerTag.MESSAGE;
 import static com.hotels.road.offramp.metrics.TimerTag.POLL;
 import static com.hotels.road.offramp.metrics.TimerTag.SEND;
+
+import static reactor.core.scheduler.Schedulers.single;
 
 import java.util.List;
 import java.util.Map;
@@ -56,8 +56,6 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import reactor.core.publisher.Mono;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -68,8 +66,8 @@ import com.hotels.road.offramp.model.Cancel;
 import com.hotels.road.offramp.model.Commit;
 import com.hotels.road.offramp.model.CommitResponse;
 import com.hotels.road.offramp.model.Connection;
-import com.hotels.road.offramp.model.Event;
 import com.hotels.road.offramp.model.Error;
+import com.hotels.road.offramp.model.Event;
 import com.hotels.road.offramp.model.Message;
 import com.hotels.road.offramp.model.Rebalance;
 import com.hotels.road.offramp.model.Request;
@@ -77,17 +75,18 @@ import com.hotels.road.offramp.socket.EventSender;
 import com.hotels.road.offramp.spi.RoadConsumer;
 import com.hotels.road.offramp.spi.RoadConsumer.RebalanceListener;
 
+import reactor.core.publisher.Mono;
+
 @RunWith(MockitoJUnitRunner.class)
 public class OfframpServiceV2Test {
+
+  private final ObjectMapper mapper = new ObjectMapper();
+  private final String podName = "podName";
   private @Mock RoadConsumer consumer;
   private @Mock Encoder encoder;
   private @Mock MessageFunction messageFunction;
   private @Mock EventSender sender;
   private @Mock StreamMetrics metrics;
-
-  private final ObjectMapper mapper = new ObjectMapper();
-  private final String podName = "podName";
-
   private OfframpServiceV2 underTest;
 
   @Before
@@ -122,7 +121,6 @@ public class OfframpServiceV2Test {
       Awaitility.await().atMost(500, MILLISECONDS).pollInterval(10, MILLISECONDS).until(() -> {
         verify(underTest).sendMessage(record);
       });
-
     } finally {
       underTest.close();
     }
@@ -202,7 +200,7 @@ public class OfframpServiceV2Test {
 
   @Test
   public void replenishBuffer() throws Exception {
-    String key = "this key";
+    String key = "a key";
     Payload<JsonNode> payload = new Payload<JsonNode>((byte) 0, 1, mapper.createObjectNode());
     Record record = new Record(0, 1L, 3L, key, payload);
     List<Record> records = singletonList(record);
@@ -225,11 +223,11 @@ public class OfframpServiceV2Test {
 
   @Test
   public void sendMessage() throws Exception {
-    String key = "this key";
+    String key = "the key";
     JsonNode value = mapper.createObjectNode();
     Payload<JsonNode> payload = new Payload<JsonNode>((byte) 0, 2, value);
     Record record = new Record(0, 1L, 3L, key, payload);
-    Message<JsonNode> message = new Message<>(0, 1L, 2, 3L, value);
+    Message<JsonNode> message = new Message<>(0, key, 1L, 2, 3L, value);
 
     doReturn(value).when(messageFunction).apply(payload);
     doReturn(message).when(metrics).record(eq(MESSAGE), argThat(new ArgMatcher<Supplier<Message<JsonNode>>>() {}));
@@ -273,7 +271,7 @@ public class OfframpServiceV2Test {
 
   @Test
   public void sendEvent() throws Exception {
-    Event event = new Message<>(0, 1L, 2, 3L, mapper.createObjectNode());
+    Event event = new Message<>(0, "k", 1L, 2, 3L, mapper.createObjectNode());
     String raw = "";
 
     doReturn(raw).when(underTest).encodeEvent(event);
@@ -288,7 +286,7 @@ public class OfframpServiceV2Test {
 
   @Test
   public void encodeMessage() throws Exception {
-    Event event = new Message<>(0, 1L, 2, 3L, mapper.createObjectNode());
+    Event event = new Message<>(0, "k", 1L, 2, 3L, mapper.createObjectNode());
     String raw = "";
 
     doReturn(raw).when(encoder).encode(event);
@@ -325,9 +323,12 @@ public class OfframpServiceV2Test {
   }
 
   static abstract class ArgMatcher<T> implements ArgumentMatcher<T> {
+
     @Override
     public boolean matches(T argument) {
       return true;
     }
+
   }
+
 }

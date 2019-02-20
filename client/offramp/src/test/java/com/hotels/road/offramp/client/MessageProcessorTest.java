@@ -31,6 +31,7 @@ import com.hotels.road.offramp.model.Request;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MessageProcessorTest {
+
   private @Mock EventSender eventSender;
   private @Mock Subscriber<? super Message<String>> subscriber;
 
@@ -64,7 +65,7 @@ public class MessageProcessorTest {
 
   @Test
   public void onNext() throws Exception {
-    Message<String> message = new Message<>(0, 1L, 2, 3L, "foo");
+    Message<String> message = new Message<>(0, "k", 1L, 2, 3L, "foo");
 
     underTest.subscribe(subscriber);
     underTest.onNext(message);
@@ -82,4 +83,5 @@ public class MessageProcessorTest {
 
     verify(subscriber, times(1)).onError(exception);
   }
+
 }

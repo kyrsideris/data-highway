@@ -18,7 +18,9 @@ package com.hotels.road.loadingbay;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +40,7 @@ import com.hotels.road.loadingbay.model.Destinations;
 import com.hotels.road.loadingbay.model.Hive;
 import com.hotels.road.loadingbay.model.HiveRoad;
 import com.hotels.road.loadingbay.model.HiveStatus;
+import com.hotels.road.rest.model.RoadType;
 import com.hotels.road.tollbooth.client.api.PatchOperation;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
@@ -86,6 +89,19 @@ public class LoadingBayTest {
     assertThat(operations.size(), is(0));
     verify(landerMonitor).setEnabled(false);
     verify(landerMonitor).establishLandingFrequency("PT1H");
+  }
+
+  @Test
+  public void compactedRoad() {
+    Hive hive = Hive.builder().status(HiveStatus.builder().build()).build();
+    Destinations destinations = Destinations.builder().hive(hive).build();
+    HiveRoad road = HiveRoad.builder().name(ROAD_NAME).type(RoadType.COMPACT).destinations(destinations).build();
+    when(monitorFactory.apply(road)).thenReturn(landerMonitor);
+
+    List<PatchOperation> operations = underTest.inspectModel(ROAD_NAME, road);
+
+    assertThat(operations.size(), is(0));
+    verify(landerMonitor, never()).setEnabled(anyBoolean());
   }
 
   @Test

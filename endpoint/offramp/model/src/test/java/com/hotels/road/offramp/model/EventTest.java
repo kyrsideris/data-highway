@@ -25,10 +25,10 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import lombok.Data;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+
+import lombok.Data;
 
 public class EventTest {
 
@@ -91,16 +91,19 @@ public class EventTest {
     ObjectMapper mapper = new ObjectMapper();
     TypeFactory typeFactory = mapper.getTypeFactory();
     mapper.registerModule(Event.module(typeFactory, typeFactory.constructType(Payload.class), Payload.class, null));
-    Event event = new Message<>(0, 1L, 2, 3L, new Payload("bar"));
+    Event event = new Message<>(0, "k", 1L, 2, 3L, new Payload("bar"));
     String json = mapper.writeValueAsString(event);
     assertThat(json,
-        is("{\"type\":\"MESSAGE\",\"partition\":0,\"offset\":1,\"schema\":2,\"timestampMs\":3,\"payload\":{\"foo\":\"bar\"}}"));
+        is("{\"type\":\"MESSAGE\",\"partition\":0,\"key\":\"k\",\"offset\":1,\"schema\":2,\"timestampMs\":3,\"payload\":{\"foo\":\"bar\"}}"));
     Event result = mapper.readValue(json, Event.class);
     assertThat(result, is(event));
   }
 
   @Data
   static class Payload {
+
     private final String foo;
+
   }
+
 }

@@ -24,17 +24,18 @@ import java.util.Map;
 import org.junit.Test;
 import org.reactivestreams.Publisher;
 
+import com.hotels.road.offramp.model.Message;
+
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
-import com.hotels.road.offramp.model.Message;
-
 public class CommitsTest {
+
   @Test(timeout = 50000)
   public void commit() throws Exception {
-    Message<String> message1 = new Message<>(0, 1L, 1, 1L, "a");
-    Message<String> message2 = new Message<>(1, 2L, 1, 1L, "b");
-    Message<String> message3 = new Message<>(1, 3L, 1, 1L, "c");
+    Message<String> message1 = new Message<>(0, "k", 1L, 1, 1L, "a");
+    Message<String> message2 = new Message<>(1, "k", 2L, 1, 1L, "b");
+    Message<String> message3 = new Message<>(1, "k", 3L, 1, 1L, "c");
     Flux<Message<?>> messages = Flux.just(message1, message2, message3);
 
     Publisher<Map<Integer, Long>> batch = Commits.fromMessages(messages, Duration.ofSeconds(1));
@@ -45,4 +46,5 @@ public class CommitsTest {
       assertThat(offsets.get(1), is(4L));
     }).verifyComplete();
   }
+
 }

@@ -59,14 +59,12 @@ import com.hotels.road.tls.TLSConfig;
 @RunWith(MockitoJUnitRunner.class)
 public class WebSocketTest {
 
+  private final URI uri = URI.create("localhost");
+  private final ObjectMapper mapper = new ObjectMapper();
   private @Mock Session session;
   private @Mock EventHandler eventHandler;
   private @Mock ErrorHandler errorHandler;
   private @Mock CloseHandler closeHandler;
-
-  private final URI uri = URI.create("localhost");
-  private final ObjectMapper mapper = new ObjectMapper();
-
   private WebSocket underTest;
 
   @Before
@@ -158,7 +156,7 @@ public class WebSocketTest {
 
   @Test
   public void receiveString() throws Exception {
-    Message<String> event = new Message<String>(0, 1L, 2, 3L, "message");
+    Message<String> event = new Message<String>(0, "k", 1L, 2, 3L, "message");
     String input = mapper.writeValueAsString(event);
     underTest.receiveString(input);
     verify(eventHandler).onEvent(event);
@@ -175,7 +173,7 @@ public class WebSocketTest {
 
   @Test
   public void receiveInputStream() throws Exception {
-    Message<String> event = new Message<String>(0, 1L, 2, 3L, "message");
+    Message<String> event = new Message<String>(0, "k", 1L, 2, 3L, "message");
     byte[] input = mapper.writeValueAsBytes(event);
     underTest.receiveByteArray(input);
     verify(eventHandler).onEvent(event);
@@ -204,4 +202,5 @@ public class WebSocketTest {
       }
     });
   }
+
 }

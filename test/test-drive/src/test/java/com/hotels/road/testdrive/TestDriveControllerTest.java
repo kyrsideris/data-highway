@@ -52,6 +52,7 @@ import com.hotels.road.testdrive.MemoryRoadPersistence.StreamKey;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = TestDriveController.class)
 public class TestDriveControllerTest {
+
   private final ObjectMapper mapper = new ObjectMapper();
   private @Autowired TestDriveController underTest;
   private @Autowired ApplicationContext context;
@@ -80,10 +81,12 @@ public class TestDriveControllerTest {
 
   @Test
   public void getMessages() throws Exception {
-    String key = "this key";
+    String key = "my key";
     JsonNode node = mapper.createObjectNode().put("foo", "bar");
-    doReturn(singletonList(new Record(0, 1, 2L, key, new Payload<JsonNode>((byte) 0, 1, node)))).when(messages).getOrDefault(
-        "road1", emptyList());
+    doReturn(singletonList(
+        new Record(0, 1, 2L, key, new Payload<JsonNode>((byte) 0, 1, node))))
+        .when(messages)
+        .getOrDefault("road1", emptyList());
     mockMvc.perform(get("/testdrive/v1/roads/road1/messages")).andExpect(status().isOk()).andExpect(
         content().json("[{\"foo\":\"bar\"}]"));
   }
@@ -120,4 +123,5 @@ public class TestDriveControllerTest {
     mockMvc.perform(delete("/testdrive/v1/roads/road1/streams/stream1/messages")).andExpect(status().isOk());
     verify(commits).remove(new StreamKey("road1", "stream1"));
   }
+
 }

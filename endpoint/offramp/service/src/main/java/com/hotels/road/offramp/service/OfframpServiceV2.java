@@ -17,14 +17,14 @@ package com.hotels.road.offramp.service;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-import static lombok.AccessLevel.PACKAGE;
-
 import static com.hotels.road.offramp.metrics.TimerTag.BUFFER;
 import static com.hotels.road.offramp.metrics.TimerTag.COMMIT;
 import static com.hotels.road.offramp.metrics.TimerTag.ENCODE;
 import static com.hotels.road.offramp.metrics.TimerTag.MESSAGE;
 import static com.hotels.road.offramp.metrics.TimerTag.POLL;
 import static com.hotels.road.offramp.metrics.TimerTag.SEND;
+
+import static lombok.AccessLevel.PACKAGE;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -37,10 +37,6 @@ import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.math.LongMath;
@@ -52,17 +48,22 @@ import com.hotels.road.offramp.metrics.StreamMetrics;
 import com.hotels.road.offramp.model.Commit;
 import com.hotels.road.offramp.model.CommitResponse;
 import com.hotels.road.offramp.model.Connection;
-import com.hotels.road.offramp.model.Event;
 import com.hotels.road.offramp.model.Error;
+import com.hotels.road.offramp.model.Event;
 import com.hotels.road.offramp.model.Message;
 import com.hotels.road.offramp.model.Rebalance;
 import com.hotels.road.offramp.model.Request;
 import com.hotels.road.offramp.socket.EventSender;
 import com.hotels.road.offramp.spi.RoadConsumer;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 @RequiredArgsConstructor
 public class OfframpServiceV2 implements OfframpService {
+
   private final RoadConsumer consumer;
   private final Encoder encoder;
   private final Function<Payload<JsonNode>, JsonNode> messageFunction;
@@ -169,9 +170,7 @@ public class OfframpServiceV2 implements OfframpService {
   void sendMessage(Record record) {
     Message<JsonNode> message = metrics.record(MESSAGE, () -> {
       Payload<JsonNode> payload = record.getPayload();
-
-      // TODO for compacted logs: Add key on version v3 of offramp service
-      return new Message<>(record.getPartition(), record.getOffset(), payload.getSchemaVersion(),
+      return new Message<>(record.getPartition(), record.getKey(), record.getOffset(), payload.getSchemaVersion(),
           record.getTimestampMs(), messageFunction.apply(payload));
     });
     sendEvent(message);
@@ -217,6 +216,7 @@ public class OfframpServiceV2 implements OfframpService {
 
   @Component
   public static class Factory implements OfframpService.Factory {
+
     private final Encoder encoder;
     private final String podName;
 
@@ -231,8 +231,10 @@ public class OfframpServiceV2 implements OfframpService {
         MessageFunction messageFunction,
         EventSender sender,
         StreamMetrics metrics)
-      throws UnknownRoadException {
+        throws UnknownRoadException {
       return new OfframpServiceV2(consumer, encoder, messageFunction, sender, metrics, podName);
     }
+
   }
+
 }

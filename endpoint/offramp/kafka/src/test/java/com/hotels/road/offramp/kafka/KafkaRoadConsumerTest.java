@@ -19,6 +19,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
+import static org.apache.kafka.clients.consumer.ConsumerRecord.NULL_CHECKSUM;
+import static org.apache.kafka.clients.consumer.ConsumerRecord.NULL_SIZE;
+import static org.apache.kafka.common.record.TimestampType.CREATE_TIME;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,7 +34,6 @@ import static org.mockito.Mockito.when;
 
 import static com.hotels.road.offramp.model.DefaultOffset.EARLIEST;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -43,7 +45,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.record.TimestampType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,9 +53,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import avro.shaded.com.google.common.collect.Iterables;
-
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.hotels.road.model.core.Road;
@@ -67,16 +65,13 @@ import com.hotels.road.offramp.model.DefaultOffset;
 import com.hotels.road.offramp.spi.RoadConsumer.RebalanceListener;
 import com.hotels.road.offramp.utilities.AvroPayloadDecoder;
 
+import avro.shaded.com.google.common.collect.Iterables;
+
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class KafkaRoadConsumerTest {
-  private @Mock Consumer<String, Payload<byte[]>> consumer;
-  private @Mock SchemaProvider schemaProvider;
-  private @Mock AvroPayloadDecoder payloadDecoder;
-  private @Mock RebalanceListener rebalanceListener;
 
   private final ObjectMapper mapper = new ObjectMapper();
   private final Schema schema = SchemaBuilder.record("r").fields().optionalString("f").endRecord();
-
   private final String topicName = "topicName";
   private final String bootstrapServers = "bootstrapServers";
   private final String roadName = "roadName";
@@ -88,6 +83,11 @@ public class KafkaRoadConsumerTest {
   private final TopicPartition topicPartition = new TopicPartition(topicName, 0);
   private final long pollTimeout = 100;
   private final Properties properties = new Properties();
+
+  private @Mock Consumer<String, Payload<byte[]>> consumer;
+  private @Mock SchemaProvider schemaProvider;
+  private @Mock AvroPayloadDecoder payloadDecoder;
+  private @Mock RebalanceListener rebalanceListener;
 
   private KafkaRoadConsumer underTest;
 
@@ -101,28 +101,41 @@ public class KafkaRoadConsumerTest {
   }
 
   @Test
-  public void poll() throws Exception {
-    String key = "this key";
-    Payload<byte[]> payload = new Payload<>((byte) 0, 1, "{}".getBytes(UTF_8));
+  public void poll() {
+    Record actual = getOneConsumerRecord(createConsumerRecord("someKey"));
+    Record expected = new Record(0,  1L, 2L,"someKey", new Payload<>((byte) 0, 1, mapper.createObjectNode()));
+    assertThat(actual, is(expected));
+  }
 
-    ConsumerRecord<String, Payload<byte[]>> consumerRecord =
-        new ConsumerRecord<>(topicName, 0, 1L, 2L,
-            TimestampType.CREATE_TIME, ConsumerRecord.NULL_CHECKSUM, ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE,
-            key, payload);
-    Map<TopicPartition, List<ConsumerRecord<String, Payload<byte[]>>>> recordsMaps =
-        singletonMap(topicPartition, singletonList(consumerRecord));
-    ConsumerRecords<String, Payload<byte[]>> records = new ConsumerRecords<>(recordsMaps);
+  @Test
+  public void pollWithNullKey() {
+    Record actual = getOneConsumerRecord(createConsumerRecord(null));
+    Record expected = new Record(0, 1L, 2L, null, new Payload<>((byte) 0, 1, mapper.createObjectNode()));
+    assertThat(actual, is(expected));
+  }
 
-    when(consumer.poll(100)).thenReturn(records);
+  public Record getOneConsumerRecord(ConsumerRecord input) {
+    when(consumer.poll(100)).thenReturn(new ConsumerRecords<>(singletonMap(topicPartition, singletonList(input))));
     when(payloadDecoder.decode(any(), any())).thenReturn(mapper.createObjectNode());
-
-    Record record = new Record(0, 1L, 2L, key, new Payload<>((byte) 0, 1, mapper.createObjectNode()));
-
     underTest.init(1L, rebalanceListener);
     Iterable<Record> result = underTest.poll();
-
     assertThat(Iterables.size(result), is(1));
-    assertThat(Iterables.get(result, 0), is(record));
+    return Iterables.get(result, 0);
+  }
+
+  private ConsumerRecord createConsumerRecord(String key) {
+    return new ConsumerRecord<>(
+        topicName,
+        0,
+        1L,
+        2L,
+        CREATE_TIME,
+        NULL_CHECKSUM,
+        NULL_SIZE,
+        NULL_SIZE,
+        key,
+        new Payload<>((byte) 0, 1, "{}".getBytes(UTF_8))
+    );
   }
 
   @Test
@@ -191,4 +204,5 @@ public class KafkaRoadConsumerTest {
     underTest.init(11L, rebalanceListener);
     assertThat(underTest.getProperties().get("max.poll.records"), is("10"));
   }
+
 }

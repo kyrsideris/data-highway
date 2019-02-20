@@ -33,11 +33,15 @@ import com.hotels.road.model.core.Destination;
 import com.hotels.road.model.core.HiveDestination;
 import com.hotels.road.model.core.Road;
 import com.hotels.road.paver.api.HiveDestinationAdminClient;
+import com.hotels.road.rest.model.RoadType;
 import com.hotels.road.tollbooth.client.api.PatchOperation;
 import com.hotels.road.tollbooth.client.api.PatchSet;
 import com.hotels.road.tollbooth.client.spi.PatchSetEmitter;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Component
+@Slf4j
 public class TollBoothHiveDestinationAdminClient implements HiveDestinationAdminClient {
 
   private static final String DESTINATIONS = "/destinations";
@@ -61,9 +65,14 @@ public class TollBoothHiveDestinationAdminClient implements HiveDestinationAdmin
 
   @Override
   public void createHiveDestination(String name, HiveDestination hiveDestination)
-    throws UnknownRoadException, AlreadyExistsException {
+      throws UnknownRoadException, AlreadyExistsException {
     if (getHiveDestination(name).isPresent()) {
       throw new AlreadyExistsException(String.format("Hive destination for Road \"%s\" already exists.", name));
+    }
+
+    if (isRoadCompacted(name)) {
+      log.debug("Discarding road {} as it is compacted.", name);
+      return;
     }
 
     List<PatchOperation> operations = new ArrayList<>();
@@ -90,7 +99,12 @@ public class TollBoothHiveDestinationAdminClient implements HiveDestinationAdmin
 
   @Override
   public void updateHiveDestination(String name, HiveDestination hiveDestination)
-    throws UnknownRoadException, UnknownDestinationException {
+      throws UnknownRoadException, UnknownDestinationException {
+    if (isRoadCompacted(name)) {
+      log.debug("Discarding road {} as it is compacted.", name);
+      return;
+    }
+
     getHiveDestination(name).orElseThrow(() -> new UnknownDestinationException("Hive", name));
 
     List<PatchOperation> operations = Collections
@@ -107,4 +121,11 @@ public class TollBoothHiveDestinationAdminClient implements HiveDestinationAdmin
     return Optional.of(road(name)).map(Road::getDestinations);
   }
 
+  private boolean isRoadCompacted(String roadName) throws UnknownRoadException {
+    final Road road = roads.get(roadName);
+    if (road == null) {
+      throw new UnknownRoadException(roadName);
+    }
+    return road.getType() == RoadType.COMPACT;
+  }
 }

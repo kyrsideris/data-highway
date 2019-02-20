@@ -13,22 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.tool.cli.integration;
+package com.hotels.road.schema.gdpr;
 
-import static java.lang.String.join;
-import static java.util.Collections.nCopies;
+import java.util.Collection;
+import java.util.List;
 
-import com.hotels.road.offramp.model.Message;
+import org.apache.avro.Schema.Field;
 
-import lombok.Getter;
+public class PiiSchemaCheckVisitor extends PiiVisitor<List<String>> {
 
-public class TestMessage {
+  private boolean piiSchema = false;
 
-  @Getter
-  private static String payload = join("", nCopies(10, "x"));
-
-  public static Message<String> getTestMessage() {
-    return new Message<>(0, "k", 1L, 2, 3L, payload);
+  @Override
+  protected void onPiiField(Field field, Collection<String> breadcrumb) {
+    piiSchema = true;
   }
 
+  public boolean isPiiSchema() {
+    return piiSchema;
+  }
 }
