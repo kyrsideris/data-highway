@@ -223,11 +223,10 @@ public class OfframpServiceV2Test {
 
   @Test
   public void sendMessage() throws Exception {
-    String key = "the key";
     JsonNode value = mapper.createObjectNode();
     Payload<JsonNode> payload = new Payload<JsonNode>((byte) 0, 2, value);
-    Record record = new Record(0, 1L, 3L, key, payload);
-    Message<JsonNode> message = new Message<>(0, key, 1L, 2, 3L, value);
+    Record record = new Record(0, 1L, 3L, "the key", payload);
+    Message<JsonNode> message = new Message<>(0, "the key", 1L, 2, 3L, value);
 
     doReturn(value).when(messageFunction).apply(payload);
     doReturn(message).when(metrics).record(eq(MESSAGE), argThat(new ArgMatcher<Supplier<Message<JsonNode>>>() {}));
