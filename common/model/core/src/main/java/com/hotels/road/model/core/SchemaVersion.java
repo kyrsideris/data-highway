@@ -44,7 +44,6 @@ public class SchemaVersion {
 
   public static Optional<SchemaVersion> latest(Iterable<SchemaVersion> schemas) {
     return Streams.stream(schemas).filter(s -> !s.isDeleted())
-        // (s1, s2) -> s1.version - s2.version
         .max(Comparator.comparingInt(s -> s.version));
   }
 
