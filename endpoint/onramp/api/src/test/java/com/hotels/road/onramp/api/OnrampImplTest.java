@@ -15,6 +15,7 @@
  */
 package com.hotels.road.onramp.api;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonMap;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -66,17 +67,24 @@ public class OnrampImplTest {
   private OnMessage msgNullMessage;
   private OnMessage msgAllNull;
   private OnMessage msgAllNotNull;
-  private OnrampImpl underTest;
+  private OnrampImpl underTestNormal;
+  private OnrampImpl underTestCompact;
 
   @Before
   public void setUp() {
     when(roadNormal.getType()).thenReturn(RoadType.NORMAL);
     when(roadNormal.getSchemas()).thenReturn(singletonMap(schemaVersion.getVersion(), schemaVersion));
     when(roadNormal.getPartitionPath()).thenReturn("$.udt.user.guid");
+
     when(sender.getPartitionCount(eq(roadNormal))).thenReturn(1);
-    underTest = mock(
-        OnrampImpl.class,
-        withSettings().useConstructor(roadNormal, sender, random).defaultAnswer(CALLS_REAL_METHODS));
+    underTestNormal = mockOnrampImplwithRoad(roadNormal);
+
+    when(roadCompact.getType()).thenReturn(RoadType.COMPACT);
+    when(roadCompact.getSchemas()).thenReturn(singletonMap(schemaVersion.getVersion(), schemaVersion));
+    when(roadCompact.getPartitionPath()).thenReturn("$.udt.user.guid");
+
+    when(sender.getPartitionCount(eq(roadCompact))).thenReturn(1);
+    underTestCompact = mockOnrampImplwithRoad(roadCompact);
 
     ObjectNode value = mapper.createObjectNode().put("id", 123);
     msgNullKey     = new OnMessage(null, value);
@@ -92,9 +100,10 @@ public class OnrampImplTest {
     when(sender.sendInnerMessage(eq(roadNormal), innerMsgCaptor.capture())).thenReturn(future);
 
     Instant time = Instant.now();
-    Future<Boolean> resultNullKey = underTest.sendOnMessage(msgNullKey, time);
 
-    assertThat(resultNullKey, is(future));
+    assertThat(
+        underTestNormal.sendOnMessage(msgNullKey, time),
+        is(future));
 
     InnerMessage innerMessage = innerMsgCaptor.getValue();
     assertThat(innerMessage.getPartition(), is(0));
@@ -104,45 +113,110 @@ public class OnrampImplTest {
     assertThat(message[0], is((byte) 0x00));
     assertThat(Ints.fromBytes(message[1], message[2], message[3], message[4]), is(1));
 
-    Future<Boolean> resultNullMessage = underTest.sendOnMessage(msgNullMessage, time);
-    try {
-      resultNullMessage.get();
-      fail("Exception was not raised for null message on OnMessage!");
-    } catch (Exception e) {
-      assertThat(
-          e.getMessage(),
-          is("com.hotels.road.exception.InvalidEventException: "
-              + "The event failed validation. Normal road messages must contain a message"));
-    }
+    assertThat(
+        underTestNormal.sendOnMessage(msgAllNotNull, time),
+        is(future));
+  }
 
-    Future<Boolean> resultAllNull = underTest.sendOnMessage(msgAllNull, time);
-    try {
-      resultAllNull.get();
-      fail("Exception was not raised for null key and message on OnMessage!");
-    } catch (Exception e) {
-      assertThat(
-          e.getMessage(),
-          is("com.hotels.road.exception.InvalidEventException: "
-              + "The event failed validation. Normal road messages must contain a message"));
-    }
+  @Test
+  public void sendOnMessage_failures_correctly_onNormalRoad() throws Exception {
+    Instant time = Instant.now();
 
-    Future<Boolean> resultAllNotNull = underTest.sendOnMessage(msgAllNotNull, time);
-    assertThat(resultAllNotNull, is(future));
+    assertFailedFuture(
+        underTestNormal.sendOnMessage(msgNullMessage, time),
+        "com.hotels.road.exception.InvalidEventException: "
+            + "The event failed validation. Normal road messages must contain a message",
+        "Exception was not raised for null message on OnMessage!"
+    );
+
+    assertFailedFuture(
+        underTestNormal.sendOnMessage(msgAllNull, time),
+        "com.hotels.road.exception.InvalidEventException: "
+            + "The event failed validation. Normal road messages must contain a message",
+        "Exception was not raised for null key and message on OnMessage!"
+    );
+  }
+
+  @Test
+  public void sendOnMessage_calls_sender_correctly_onCompactRoad() throws Exception {
+    ArgumentCaptor<InnerMessage> innerMsgCaptor = ArgumentCaptor.forClass(InnerMessage.class);
+    Future<Boolean> future = CompletableFuture.completedFuture(true);
+    when(sender.sendInnerMessage(eq(roadCompact), innerMsgCaptor.capture())).thenReturn(future);
+
+    Instant time = Instant.now();
+
+    assertThat(
+        underTestCompact.sendOnMessage(msgNullMessage, time),
+        is(future));
+
+    InnerMessage msgInnerNullMessage = innerMsgCaptor.getValue();
+    assertThat(msgInnerNullMessage.getPartition(), is(0));
+    assertThat(msgInnerNullMessage.getTimestampMs(), is(time.toEpochMilli()));
+    assertThat(msgInnerNullMessage.getKey(), is("my key".getBytes(UTF_8)));
+    assertNull(msgInnerNullMessage.getMessage());
+
+    assertThat(
+        underTestCompact.sendOnMessage(msgAllNotNull, time),
+        is(future));
+
+    InnerMessage msgInnerAllNotNull = innerMsgCaptor.getValue();
+    assertThat(msgInnerAllNotNull.getPartition(), is(0));
+    assertThat(msgInnerAllNotNull.getTimestampMs(), is(time.toEpochMilli()));
+    assertThat(msgInnerAllNotNull.getKey(), is("my key".getBytes(UTF_8)));
+    byte[] message = msgInnerAllNotNull.getMessage();
+    assertThat(message[0], is((byte) 0x00));
+    assertThat(Ints.fromBytes(message[1], message[2], message[3], message[4]), is(1));
+
+  }
+
+  @Test
+  public void sendOnMessage_failures_correctly_onCompactRoad() throws Exception {
+    Instant time = Instant.now();
+
+    assertFailedFuture(
+        underTestCompact.sendOnMessage(msgNullKey, time),
+        "com.hotels.road.exception.InvalidEventException: "
+            + "The event failed validation. Compact road messages must specify a key",
+        "Exception was not raised for null message on OnMessage!"
+    );
+
+    assertFailedFuture(
+        underTestCompact.sendOnMessage(msgAllNull, time),
+        "com.hotels.road.exception.InvalidEventException: "
+            + "The event failed validation. Compact road messages must specify a key",
+        "Exception was not raised for null key and message on OnMessage!"
+    );
   }
 
   @Test
   public void roadIsAvailable() {
     when(roadNormal.isEnabled()).thenReturn(true);
 
-    assertThat(underTest.isAvailable(), is(true));
-    assertThat(underTest.getRoad(), is(roadNormal));
+    assertThat(underTestNormal.isAvailable(), is(true));
+    assertThat(underTestNormal.getRoad(), is(roadNormal));
   }
 
   @Test
   public void roadIsNotAvailable() {
     when(roadNormal.isEnabled()).thenReturn(false);
 
-    assertThat(underTest.isAvailable(), is(false));
-    assertThat(underTest.getRoad(), is(roadNormal));
+    assertThat(underTestNormal.isAvailable(), is(false));
+    assertThat(underTestNormal.getRoad(), is(roadNormal));
+  }
+
+
+  void assertFailedFuture(Future<Boolean> future, String expected, String clue) {
+    try {
+      future.get();
+      fail(clue);
+    } catch (Exception e) {
+      assertThat(e.getMessage(), is(expected));
+    }
+  }
+
+  OnrampImpl mockOnrampImplwithRoad(Road road) {
+    return mock(
+        OnrampImpl.class,
+        withSettings().useConstructor(road, sender, random).defaultAnswer(CALLS_REAL_METHODS));
   }
 }
