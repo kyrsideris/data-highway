@@ -66,9 +66,9 @@ public class OnrampImpl implements Onramp {
 
     partitions = sender.getPartitionCount(road);
     keyEncoder = key -> key == null ? null : key.getBytes(UTF_8);
-    valueEncoder = SchemaVersion.latest(road.getSchemas().values()).map(schema -> {
-      return (Function<JsonNode, byte[]>) new AvroJsonEncoder(schema);
-    }).orElse(this::noSchemaEncode);
+    valueEncoder = SchemaVersion.latest(road.getSchemas().values())
+        .map(schema -> (Function<JsonNode, byte[]>) new AvroJsonEncoder(schema) )
+        .orElse(this::noSchemaEncode);
 
     partitionNodeFunction = Optional
         .ofNullable(road.getPartitionPath())
@@ -94,10 +94,10 @@ public class OnrampImpl implements Onramp {
       // The following permutations are allowed:
       // nullable: null or not null
       //
-      // Type of Road | partition | key      |  message
-      // -------------|-----------|----------|-----------
-      //  NORMAL      | nullable  | nullable |  not null
-      //  COMPACT     | null      | not null |  nullable
+      // Type of Road | partition | key      | message
+      // -------------|-----------|----------|----------
+      //  NORMAL      | nullable  | nullable | not null
+      //  COMPACT     | null      | not null | nullable
 
       if (road.getType() == RoadType.NORMAL) {
         if (onMessage.getMessage() == null) {

@@ -46,6 +46,7 @@ import lombok.RequiredArgsConstructor;
 @Component
 @RequiredArgsConstructor
 public class MemoryRoadPersistence {
+
   private final Map<String, List<Record>> messages;
   private final Map<StreamKey, AtomicInteger> commits;
   private final SchemaProvider schemaProvider;
@@ -55,8 +56,7 @@ public class MemoryRoadPersistence {
   private static final Function<byte[], String> keyDeserializer = key -> key == null ? null : new String(key, UTF_8);
   private static final BaseDeserializer<Payload<byte[]>> valueDeserializer = new PayloadDeserializer();
 
-
-  public void write (String roadName, Integer partition, Long timestamp, byte[] key, byte[] value) {
+  public void write(String roadName, Integer partition, Long timestamp, byte[] key, byte[] value) {
 
     long offset = messages.computeIfAbsent(roadName, n -> new ArrayList<>()).size();
     String k = keyDeserializer.apply(key);
@@ -70,7 +70,8 @@ public class MemoryRoadPersistence {
     this.messages.computeIfAbsent(roadName, name -> new ArrayList<>()).add(r);
   }
 
-  public Iterable<Record> read (String roadName, String streamName, DefaultOffset defaultOffset) throws UnknownRoadException {
+  public Iterable<Record> read(String roadName, String streamName, DefaultOffset defaultOffset)
+      throws UnknownRoadException {
     List<Record> roadMessages = messages.computeIfAbsent(roadName, n -> new ArrayList<>());
     if (roadMessages == null) {
       throw new UnknownRoadException("Unknown road: " + roadName);
@@ -100,7 +101,7 @@ public class MemoryRoadPersistence {
     return Collections.emptyList();
   }
 
-  public boolean forward (String roadName, String streamName, Map<Integer, Long> offsets) throws UnknownRoadException {
+  public boolean forward(String roadName, String streamName, Map<Integer, Long> offsets) throws UnknownRoadException {
     List<Record> roadMessages = messages.computeIfAbsent(roadName, n -> new ArrayList<>());
     if (roadMessages == null) {
       throw new UnknownRoadException("Unknown road: " + roadName);
@@ -120,6 +121,7 @@ public class MemoryRoadPersistence {
 
   @Data
   static class StreamKey {
+
     private final String roadName;
     private final String streamName;
   }
