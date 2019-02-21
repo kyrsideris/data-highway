@@ -19,10 +19,14 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
+import com.hotels.road.rest.controller.common.CommonClockConfiguration;
 import com.hotels.road.rest.controller.common.ControllersCommonConfiguration;
 import com.hotels.road.security.CidrSecurityConfiguration;
 
 @Configuration
-@Import({ ControllersCommonConfiguration.class, CidrSecurityConfiguration.class })
+@Import({
+    ControllersCommonConfiguration.class,
+    CidrSecurityConfiguration.class,
+    CommonClockConfiguration.class })
 @ComponentScan
 public class OnrampControllerConfiguration {}

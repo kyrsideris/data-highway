@@ -13,29 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.testdrive;
+package com.hotels.road.onramp.api;
 
-import java.util.List;
+import static java.util.Optional.ofNullable;
+
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import lombok.RequiredArgsConstructor;
-
 import com.hotels.road.model.core.Road;
-import com.hotels.road.offramp.api.Record;
-import com.hotels.road.onramp.api.Onramp;
-import com.hotels.road.onramp.api.OnrampService;
 
 @Component
-@RequiredArgsConstructor
-class MemoryOnrampService implements OnrampService {
-  private final Map<String, Road> store;
-  private final Map<String, List<Record>> messages;
+public class OnrampServiceImpl implements OnrampService {
+  private final Map<String, Road> roads;
+  private final OnrampSender sender;
+
+  @Autowired
+  public OnrampServiceImpl(@Value("#{store}") Map<String, Road> roads, OnrampSender sender) {
+    this.roads = roads;
+    this.sender = sender;
+  }
 
   @Override
   public Optional<Onramp> getOnramp(String name) {
-    return Optional.of(name).map(store::get).map(road -> new MemoryOnramp(road, messages));
+    return ofNullable(roads.get(name)).map(road -> new OnrampImpl(road, sender));
   }
 }

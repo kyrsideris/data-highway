@@ -36,7 +36,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 import com.hotels.road.model.core.Road;
 import com.hotels.road.offramp.api.Record;
 import com.hotels.road.security.RoadWebSecurityConfigurerAdapter;
-import com.hotels.road.testdrive.MemoryRoadConsumer.StreamKey;
+import com.hotels.road.testdrive.MemoryRoadPersistence.StreamKey;
 
 @Slf4j
 @EnableSwagger2

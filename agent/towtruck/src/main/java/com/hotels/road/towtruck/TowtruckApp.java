@@ -29,6 +29,7 @@ import org.joda.time.format.ISODateTimeFormat;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -41,10 +42,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotels.road.boot.DataHighwayApplication;
 import com.hotels.road.kafkastore.KafkaStore;
 import com.hotels.road.kafkastore.serialization.Serializer;
+import com.hotels.road.rest.controller.common.CommonClockConfiguration;
 import com.hotels.road.s3.io.S3MultipartOutputStream;
 
 @SpringBootApplication
 @EnableScheduling
+@Import(CommonClockConfiguration.class)
 public class TowtruckApp {
   @Bean
   public ObjectMapper mapper() {
@@ -57,11 +60,6 @@ public class TowtruckApp {
       @Value("${kafka.road.topic}") String topic,
       Serializer<String, JsonNode> serializer) {
     return new KafkaStore<>(bootstrapServers, serializer, topic);
-  }
-
-  @Bean
-  Clock clock() {
-    return Clock.systemUTC();
   }
 
   @Bean

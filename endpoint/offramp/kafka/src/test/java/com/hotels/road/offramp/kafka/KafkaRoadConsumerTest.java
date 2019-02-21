@@ -63,6 +63,7 @@ import com.hotels.road.offramp.api.SchemaProvider;
 import com.hotels.road.offramp.kafka.KafkaRoadConsumer.KafkaRebalanceListener;
 import com.hotels.road.offramp.model.DefaultOffset;
 import com.hotels.road.offramp.spi.RoadConsumer.RebalanceListener;
+import com.hotels.road.offramp.utilities.AvroPayloadDecoder;
 
 import avro.shaded.com.google.common.collect.Iterables;
 
@@ -102,14 +103,14 @@ public class KafkaRoadConsumerTest {
   @Test
   public void poll() {
     Record actual = getOneConsumerRecord(createConsumerRecord("someKey"));
-    Record expected = new Record(0, "someKey", 1L, 2L, new Payload<>((byte) 0, 1, mapper.createObjectNode()));
+    Record expected = new Record(0,  1L, 2L,"someKey", new Payload<>((byte) 0, 1, mapper.createObjectNode()));
     assertThat(actual, is(expected));
   }
 
   @Test
   public void pollWithNullKey() {
     Record actual = getOneConsumerRecord(createConsumerRecord(null));
-    Record expected = new Record(0, null, 1L, 2L, new Payload<>((byte) 0, 1, mapper.createObjectNode()));
+    Record expected = new Record(0, 1L, 2L, null, new Payload<>((byte) 0, 1, mapper.createObjectNode()));
     assertThat(actual, is(expected));
   }
 

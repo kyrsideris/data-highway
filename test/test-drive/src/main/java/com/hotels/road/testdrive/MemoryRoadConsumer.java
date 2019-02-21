@@ -17,18 +17,13 @@ package com.hotels.road.testdrive;
 
 import static java.util.Collections.singleton;
 
-import static com.hotels.road.offramp.model.DefaultOffset.LATEST;
-
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.stereotype.Component;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 import com.hotels.road.offramp.api.Record;
@@ -38,9 +33,12 @@ import com.hotels.road.offramp.spi.RoadConsumer;
 
 @AllArgsConstructor
 class MemoryRoadConsumer implements RoadConsumer {
-  private final List<Record> messages;
-  private final AtomicInteger commit;
-  private int offset;
+
+  private final MemoryRoadPersistence memoryRoadPersistence;
+
+  private final String roadName;
+  private final String streamName;
+  private final DefaultOffset defaultOffset;
 
   @Override
   public void init(long initialRequest, RebalanceListener rebalanceListener) {
@@ -49,21 +47,20 @@ class MemoryRoadConsumer implements RoadConsumer {
 
   @Override
   public Iterable<Record> poll() {
-    if (offset < messages.size()) {
-      Record record = messages.get(offset);
-      offset++;
-      return Collections.singletonList(record);
+    try {
+      return memoryRoadPersistence.read(roadName, streamName, defaultOffset);
+    } catch (UnknownRoadException e) {
+      return Collections.emptyList();
     }
-    return Collections.emptyList();
   }
 
   @Override
   public boolean commit(Map<Integer, Long> offsets) {
-    Long o = offsets.get(0);
-    if (o != null) {
-      commit.set(o.intValue());
+    try {
+      return memoryRoadPersistence.forward(roadName, streamName, offsets);
+    } catch (UnknownRoadException e) {
+      return false;
     }
-    return true;
   }
 
   @Override
@@ -72,36 +69,19 @@ class MemoryRoadConsumer implements RoadConsumer {
   @Component
   @RequiredArgsConstructor
   static class Factory implements RoadConsumer.Factory {
+    private final MemoryRoadPersistence memoryRoadPersistence;
     private final Map<String, List<Record>> messages;
-    private final Map<StreamKey, AtomicInteger> commits;
 
     @Override
     public RoadConsumer create(String roadName, String streamName, DefaultOffset defaultOffset)
       throws UnknownRoadException {
-      List<Record> roadMessages = messages.computeIfAbsent(roadName, n -> new ArrayList<>());
-      if (roadMessages == null) {
+
+      if (!messages.containsKey(roadName)) {
         throw new UnknownRoadException("Unknown road: " + roadName);
       }
 
-      StreamKey streamKey = new StreamKey(roadName, streamName);
+      return new MemoryRoadConsumer(memoryRoadPersistence, roadName, streamName, defaultOffset);
 
-      AtomicInteger commit = commits.computeIfAbsent(streamKey, k -> new AtomicInteger(-1));
-      int offset = 0;
-      if (commit.get() == -1) {
-        if (defaultOffset == LATEST) {
-          offset = roadMessages.size();
-        }
-      } else {
-        offset = commit.get();
-      }
-
-      return new MemoryRoadConsumer(roadMessages, commit, offset);
     }
-  }
-
-  @Data
-  static class StreamKey {
-    private final String roadName;
-    private final String streamName;
   }
 }

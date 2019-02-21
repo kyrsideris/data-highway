@@ -47,11 +47,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import com.hotels.road.client.OnrampOptions;
 import com.hotels.road.client.RoadClient;
 import com.hotels.road.client.simple.SimpleRoadClient;
 import com.hotels.road.offramp.client.OfframpClient;
 import com.hotels.road.offramp.client.OfframpOptions;
 import com.hotels.road.offramp.model.Message;
+import com.hotels.road.onramp.api.OnMessage;
 import com.hotels.road.rest.model.Authorisation;
 import com.hotels.road.rest.model.Authorisation.Offramp;
 import com.hotels.road.rest.model.Authorisation.Onramp;
@@ -106,17 +108,34 @@ public class TestDriveAppTest {
     assertThat(paver.getLatestSchema(ROAD_NAME), is(schema));
 
     ObjectNode payload = mapper.createObjectNode().put("id", 0);
-    try (RoadClient<JsonNode> onramp = new SimpleRoadClient<>(host, "user", "pass", ROAD_NAME, 2,
-        TLSConfig.trustAll())) {
-      StandardResponse response = onramp.sendMessage(payload);
+    OnrampOptions onOptions = onrampOptions();
+    try (RoadClient<JsonNode> onrampV1 = new SimpleRoadClient<>(onOptions, "v1")) {
+      StandardResponse response = onrampV1.sendMessage(payload);
       assertThat(response.isSuccess(), is(true));
     }
 
-    OfframpOptions<JsonNode> options = offrampOptions();
-    try (OfframpClient<JsonNode> offramp = OfframpClient.create(options)) {
+    OfframpOptions<JsonNode> offOptions = offrampOptions();
+
+    try (OfframpClient<JsonNode> offramp = OfframpClient.create(offOptions)) {
       Message<JsonNode> message = Flux.from(offramp.messages()).blockFirst();
       assertThat(message.getPartition(), is(0));
       assertThat(message.getOffset(), is(0L));
+      assertThat(message.getSchema(), is(1));
+      assertThat(message.getPayload(), is(payload));
+    }
+
+    OnMessage messageV2 = new OnMessage("key1", payload);
+    JsonNode messageV2JsonNode = mapper.valueToTree(messageV2);
+
+    try (RoadClient<JsonNode> onrampV2 = new SimpleRoadClient<>(onOptions, "v2")) {
+      StandardResponse response = onrampV2.sendMessage(messageV2JsonNode);
+      assertThat(response.isSuccess(), is(true));
+    }
+
+    try (OfframpClient<JsonNode> offramp = OfframpClient.create(offOptions)) {
+      Message<JsonNode> message = Flux.from(offramp.messages()).blockFirst();
+      assertThat(message.getPartition(), is(0));
+      assertThat(message.getOffset(), is(1L));
       assertThat(message.getSchema(), is(1));
       assertThat(message.getPayload(), is(payload));
     }
@@ -136,8 +155,8 @@ public class TestDriveAppTest {
     assertThat(paver.getLatestSchema(ROAD_NAME), is(schema));
 
     JsonNode payload = mapper.createObjectNode().set("id", NullNode.getInstance());
-    try (RoadClient<JsonNode> onramp = new SimpleRoadClient<>(host, "user", "pass", ROAD_NAME, 2,
-        TLSConfig.trustAll())) {
+    OnrampOptions onOptions = onrampOptions();
+    try (RoadClient<JsonNode> onramp = new SimpleRoadClient<>(onOptions, "v2")) {
       StandardResponse response = onramp.sendMessage(payload);
       assertThat(response.isSuccess(), is(false));
     }
@@ -170,6 +189,17 @@ public class TestDriveAppTest {
 
   private Schema schema() {
     return SchemaBuilder.record("test").fields().requiredInt("id").endRecord();
+  }
+
+  private OnrampOptions onrampOptions() {
+    return OnrampOptions.builder()
+        .host(host)
+        .username("user")
+        .password("pass")
+        .roadName(ROAD_NAME)
+        .threads(2)
+        .tlsConfigFactory(TLSConfig.trustAllFactory())
+        .build();
   }
 
   private OfframpOptions<JsonNode> offrampOptions() {

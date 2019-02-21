@@ -19,7 +19,9 @@ import java.util.Map;
 
 import org.apache.kafka.common.serialization.Deserializer;
 
-interface BaseDeserializer<T> extends Deserializer<T> {
+import com.hotels.road.offramp.utilities.BaseDeserializer;
+
+interface BaseKafkaDeserializer<T> extends Deserializer<T>, BaseDeserializer<T> {
   @Override
   default void configure(Map<String, ?> configs, boolean isKey) {}
 

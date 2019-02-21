@@ -26,20 +26,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
-import org.apache.avro.generic.GenericData.Record;
-import org.apache.avro.generic.GenericDatumReader;
-import org.apache.avro.io.BinaryDecoder;
-import org.apache.avro.io.DecoderFactory;
 import org.apache.kafka.clients.producer.BufferExhaustedException;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.Producer;
@@ -54,19 +47,15 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 
 import com.hotels.road.exception.InvalidEventException;
-import com.hotels.road.exception.InvalidKeyException;
-import com.hotels.road.exception.RoadUnavailableException;
 import com.hotels.road.model.core.Road;
-import com.hotels.road.model.core.SchemaVersion;
-import com.hotels.road.onramp.api.Event;
+import com.hotels.road.model.core.InnerMessage;
 import com.hotels.road.partition.KeyPathParser;
 import com.hotels.road.partition.KeyPathParser.Path;
 
 @RunWith(MockitoJUnitRunner.class)
-public class OnrampImplTest {
+public class KafkaOnrampSenderTest {
 
   private static final String ROAD_NAME = "test-onramp";
   private static final Schema SCHEMA = SchemaBuilder
@@ -89,30 +78,13 @@ public class OnrampImplTest {
   private Future<RecordMetadata> future;
 
   private final ObjectMapper mapper = new ObjectMapper();
-  private OnrampImpl underTest;
-  private Map<Integer, SchemaVersion> schemas;
+  private KafkaOnrampSender underTest;
 
   @Before
   public void setUp() {
-    schemas = ImmutableMap.of(1, new SchemaVersion(SCHEMA, 1, false));
     when(road.getName()).thenReturn(ROAD_NAME);
     when(road.getTopicName()).thenReturn(ROAD_NAME);
-    when(road.getSchemas()).thenReturn(schemas);
-    underTest = new OnrampImpl(metrics, kafkaProducer, road);
-  }
-
-  @Test
-  public void failsToVerifyEvent()
-    throws InvalidEventException, InterruptedException, JsonProcessingException, IOException {
-    Future<Boolean> result = underTest.sendEvent(mapper.readTree("{}"));
-
-    try {
-      result.get();
-    } catch (ExecutionException e) {
-      assertThat(e.getCause(), instanceOf(InvalidEventException.class));
-      return;
-    }
-    fail("Expected ExecutionException");
+    underTest = new KafkaOnrampSender(metrics, kafkaProducer);
   }
 
   @SuppressWarnings("unchecked")
@@ -122,7 +94,7 @@ public class OnrampImplTest {
     when(kafkaProducer.send(any(ProducerRecord.class), any(Callback.class))).thenReturn(future);
     doThrow(new ExecutionException(new BufferExhaustedException("exhausted"))).when(future).get();
 
-    Future<Boolean> result = underTest.sendEvent(mapper.readTree("{\"f\": \"f16\"}"));
+    Future<Boolean> result = underTest.sendInnerMessage(road, new InnerMessage(0, 1550482463, new byte[0], new byte[0]));
 
     try {
       result.get();
@@ -139,28 +111,14 @@ public class OnrampImplTest {
     throws InvalidEventException, InterruptedException, ExecutionException, JsonProcessingException, IOException {
     when(kafkaProducer.send(any(ProducerRecord.class), any(Callback.class))).thenReturn(future);
 
-    Future<Boolean> result = underTest.sendEvent(mapper.readTree("{\"f\": \"f16\"}"));
+    Future<Boolean> result = underTest.sendInnerMessage(road, new InnerMessage(0, 1550482463, new byte[0], new byte[0]));
 
     assertThat(result.get(), is(true));
   }
 
-  @Test
-  public void getSchemaWithId() {
-    SchemaVersion schemaVersion = underTest.getSchemaVersion();
-
-    assertThat(schemaVersion.getSchema(), is(SCHEMA));
-    assertThat(schemaVersion.getVersion(), is(1));
-  }
-
-  @Test(expected = RoadUnavailableException.class)
-  public void getSchemaWithIdNoSchema() {
-    when(road.getSchemas()).thenReturn(Collections.emptyMap());
-    underTest.getSchemaVersion();
-  }
-
   @SuppressWarnings("unchecked")
   @Test
-  public void sendEncodedEvent_UpdateMetrics_Success() throws InvalidKeyException {
+  public void sendEncodedEvent_UpdateMetrics_Success() throws Exception {
     RecordMetadata metadata = new RecordMetadata(null, 0, 0, 0, Long.valueOf(0), 0, 1);
     Exception exception = null;
 
@@ -169,14 +127,14 @@ public class OnrampImplTest {
       return future;
     });
 
-    underTest.sendEncodedEvent(new Event<>(null, null), null);
+    underTest.sendInnerMessage(road, new InnerMessage(0, 1550482463, new byte[0], new byte[0]));
 
     verify(metrics).markSuccessMetrics(ROAD_NAME, 1);
   }
 
   @SuppressWarnings("unchecked")
   @Test
-  public void sendEncodedEvent_UpdateMetrics_Failure() throws InvalidKeyException {
+  public void sendEncodedEvent_UpdateMetrics_Failure() throws Exception {
     RecordMetadata metadata = null;
     Exception exception = new Exception();
 
@@ -185,7 +143,7 @@ public class OnrampImplTest {
       return future;
     });
 
-    underTest.sendEncodedEvent(new Event<>(null, null), null);
+    underTest.sendInnerMessage(road, new InnerMessage(0, 1550482463, new byte[0], new byte[0]));
 
     verify(metrics).markFailureMetrics(ROAD_NAME);
   }
@@ -196,44 +154,35 @@ public class OnrampImplTest {
     ArgumentCaptor<ProducerRecord> captor = ArgumentCaptor.forClass(ProducerRecord.class);
     when(kafkaProducer.send(captor.capture(), any(Callback.class))).thenReturn(future);
 
-    underTest.sendEvent(mapper.readTree("{\"f\": \"f16\"}"));
-    underTest.sendEvent(mapper.readTree("{\"f\": \"f17\"}"));
+    underTest.sendInnerMessage(road, new InnerMessage(0, 1550482463, new byte[0], new byte[] { 0x01, 0x02 }));
+    underTest.sendInnerMessage(road, new InnerMessage(0, 1550482463, new byte[0], new byte[] { 0x03, 0x04 }));
 
     List<ProducerRecord> values = captor.getAllValues();
 
-    assertRecord(((ProducerRecord<byte[], byte[]>) values.get(0)).value(), "f16");
-    assertRecord(((ProducerRecord<byte[], byte[]>) values.get(1)).value(), "f17");
-  }
-
-  private void assertRecord(byte[] value, String expected) throws IOException {
-    ByteBuffer buffer = ByteBuffer.wrap(value);
-
-    assertThat(buffer.get(), is((byte) 0));
-    assertThat(buffer.getInt(), is(1));
-
-    BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(value, buffer.position(), buffer.remaining(), null);
-    Record read = new GenericDatumReader<Record>(SCHEMA).read(null, decoder);
-    assertThat(read.get("f").toString(), is(expected));
+    assertThat(((ProducerRecord<byte[], byte[]>) values.get(0)).value()[0], is((byte)0x01));
+    assertThat(((ProducerRecord<byte[], byte[]>) values.get(0)).value()[1], is((byte)0x02));
+    assertThat(((ProducerRecord<byte[], byte[]>) values.get(1)).value()[0], is((byte)0x03));
+    assertThat(((ProducerRecord<byte[], byte[]>) values.get(1)).value()[1], is((byte)0x04));
   }
 
   @Test
   public void pathSupplier() {
     when(road.getPartitionPath()).thenReturn("$.a");
-    Supplier<Path> supplier = OnrampImpl.pathSupplier(road);
+    Supplier<Path> supplier = KafkaOnrampSender.pathSupplier(road);
     assertThat(supplier.get(), is(KeyPathParser.parse("$.a")));
   }
 
   @Test
   public void pathSupplierNull() {
     when(road.getPartitionPath()).thenReturn(null);
-    Supplier<Path> supplier = OnrampImpl.pathSupplier(road);
+    Supplier<Path> supplier = KafkaOnrampSender.pathSupplier(road);
     assertThat(supplier.get(), is(nullValue()));
   }
 
   @Test
   public void pathSupplierEmpty() {
     when(road.getPartitionPath()).thenReturn("");
-    Supplier<Path> supplier = OnrampImpl.pathSupplier(road);
+    Supplier<Path> supplier = KafkaOnrampSender.pathSupplier(road);
     assertThat(supplier.get(), is(nullValue()));
   }
 

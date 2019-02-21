@@ -15,19 +15,15 @@
  */
 package com.hotels.road.onramp.api;
 
-import java.util.List;
+import java.time.Instant;
 import java.util.concurrent.Future;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 import com.hotels.road.model.core.SchemaVersion;
 
 public interface Onramp {
-  Future<Boolean> sendEvent(JsonNode event);
+  Future<Boolean> sendOnMessage(OnMessage onMessage, Instant time);
 
   boolean isAvailable();
 
   SchemaVersion getSchemaVersion();
-
-  List<String> getCidrBlocks();
 }

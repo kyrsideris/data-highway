@@ -13,17 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.offramp.api;
-
-import com.fasterxml.jackson.databind.JsonNode;
+package com.hotels.road.onramp.api;
 
 import lombok.Value;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 @Value
-public class Record {
-  int partition;
-  long offset;
-  long timestampMs;
+public class OnMessage {
   String key;
-  Payload<JsonNode> payload;
+  ObjectNode message;
 }

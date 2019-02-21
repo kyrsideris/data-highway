@@ -42,6 +42,7 @@ public class RoadWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapt
           .antMatchers(GET, "/paver/v1/**").permitAll()
           .antMatchers("/paver/v1/**").permitAll()
           .antMatchers("/onramp/v1/**").permitAll()
+          .antMatchers("/onramp/v2/**").permitAll()
           .antMatchers("/offramp/v2/**").permitAll()
           // .antMatchers("/paver/v1/**").authenticated()
           // .antMatchers("/onramp/v1/**").authenticated()

@@ -13,6 +13,11 @@
   <dependencies>
     <dependency>
       <groupId>com.hotels.road</groupId>
+      <artifactId>road-onramp-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.hotels.road</groupId>
       <artifactId>road-offramp-api</artifactId>
       <version>${project.version}</version>
     </dependency>

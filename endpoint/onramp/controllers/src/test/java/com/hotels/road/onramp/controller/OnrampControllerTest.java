@@ -30,6 +30,8 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standal
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
@@ -37,6 +39,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -45,15 +48,17 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultHandler;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-
-import com.fasterxml.jackson.databind.JsonNode;
+import lombok.extern.slf4j.Slf4j;
 
 import com.hotels.road.exception.InvalidEventException;
 import com.hotels.road.exception.ServiceException;
 import com.hotels.road.model.core.SchemaVersion;
+import com.hotels.road.onramp.api.OnMessage;
 import com.hotels.road.onramp.api.Onramp;
 import com.hotels.road.onramp.api.OnrampService;
 import com.hotels.road.rest.controller.common.GlobalExceptionHandler;
@@ -64,6 +69,7 @@ import com.hotels.road.security.CidrBlockAuthorisation;
     OnrampController.class,
     GlobalExceptionHandler.class,
     OnrampControllerTest.TestConfiguration.class })
+@Slf4j
 public class OnrampControllerTest {
   @Configuration
   public static class TestConfiguration {
@@ -72,17 +78,25 @@ public class OnrampControllerTest {
     public @Bean MeterRegistry testMeterRegistry() {
       return registry;
     }
+
+    public @Bean Clock clock() {
+      return Clock.systemDefaultZone();
+    }
   }
 
-  private static final String INVALID_EVENT_DETAIL = "Invalid Event";
+  private static final String INVALID_EVENT_DETAIL = "Invalid OnMessage";
   private static final String ERROR_SENT = "An error occured while posting an event";
   private static final String NON_EXISTENT_ROAD = "non_existent_road";
   private static final String PRESENT_ROAD = "present_road";
   private static final String CLOSED_ROAD = "closed_road";
   private static final String ENDPOINT_URI_FORMAT = "/onramp/v1/roads/%s/messages";
+  private static final String ENDPOINT2_URI_FORMAT = "/onramp/v2/roads/%s/messages";
   private static final String NON_EXISTENT_ROAD_URI = String.format(ENDPOINT_URI_FORMAT, NON_EXISTENT_ROAD);
   private static final String PRESENT_ROAD_URI = String.format(ENDPOINT_URI_FORMAT, PRESENT_ROAD);
   private static final String CLOSED_ROAD_URI = String.format(ENDPOINT_URI_FORMAT, CLOSED_ROAD);
+  private static final String NON_EXISTENT_ROAD_URI_2 = String.format(ENDPOINT2_URI_FORMAT, NON_EXISTENT_ROAD);
+  private static final String PRESENT_ROAD_URI_2 = String.format(ENDPOINT2_URI_FORMAT, PRESENT_ROAD);
+  private static final String CLOSED_ROAD_URI_2 = String.format(ENDPOINT2_URI_FORMAT, CLOSED_ROAD);
 
   @MockBean
   private CidrBlockAuthorisation authorisation;
@@ -111,19 +125,21 @@ public class OnrampControllerTest {
         .setControllerAdvice(globalExceptionHandler)
         .setMessageConverters(new MappingJackson2HttpMessageConverter())
         .build();
-    when(onramp.sendEvent(any(JsonNode.class))).thenAnswer(a -> {
-      if (((JsonNode) a.getArgument(0)).get("valid").asBoolean()) {
-        return immediateFuture(true);
-      } else {
-        return immediateFailedFuture(new InvalidEventException(INVALID_EVENT_DETAIL));
-      }
-    });
+    when(onramp.sendOnMessage(any(OnMessage.class), any(Instant.class))).thenAnswer(this::mockSend);
     when(onramp.isAvailable()).thenReturn(true);
     when(onramp.getSchemaVersion()).thenReturn(schemaVersion);
-    when(errorOnramp.sendEvent(any(JsonNode.class)))
-        .thenReturn(immediateFailedFuture(new ServiceException(ERROR_SENT)));
+    when(errorOnramp.sendOnMessage(any(OnMessage.class), any(Instant.class))).thenReturn(immediateFailedFuture(new ServiceException(ERROR_SENT)));
     when(errorOnramp.isAvailable()).thenReturn(true);
     when(closedOnramp.isAvailable()).thenReturn(false);
+  }
+
+  Future<Boolean> mockSend(InvocationOnMock a) {
+    OnMessage onMessage = a.getArgument(0);
+    if (onMessage.getMessage().get("valid").asBoolean()) {
+      return immediateFuture(true);
+    } else {
+      return immediateFailedFuture(new InvalidEventException(INVALID_EVENT_DETAIL));
+    }
   }
 
   @Test
@@ -138,11 +154,51 @@ public class OnrampControllerTest {
   }
 
   @Test
+  public void roadNotFound2() throws Exception {
+    given(onrampService.getOnramp(NON_EXISTENT_ROAD)).willReturn(Optional.empty());
+
+    mockMvc
+        .perform(
+            post(NON_EXISTENT_ROAD_URI_2)
+                .content("[{\"partition\":null,\"key\":null,\"message\":{}}]")
+                .contentType(APPLICATION_JSON_UTF8))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.message", is(String.format("Road \"%s\" does not exist.", NON_EXISTENT_ROAD))))
+        .andExpect(jsonPath("$.success", is(false)));
+  }
+
+  @Test
   public void eventPostedSuccessfully() throws Exception {
     given(onrampService.getOnramp(PRESENT_ROAD)).willReturn(Optional.of(onramp));
 
     mockMvc
         .perform(post(PRESENT_ROAD_URI).content("[{\"valid\":true}]").contentType(APPLICATION_JSON_UTF8))
+        .andExpect(status().isOk()).andDo(new ResultHandler() {
+          @Override
+          public void handle(MvcResult result) throws Exception {
+            log.info("response = {}", result.getResponse().getContentAsString());
+          }
+        })
+        .andExpect(jsonPath("$[0].message", is("Message accepted.")))
+        .andExpect(jsonPath("$[0].success", is(true)));
+  }
+
+  @Test
+  public void eventPostedSuccessfully2() throws Exception {
+    given(onrampService.getOnramp(PRESENT_ROAD)).willReturn(Optional.of(onramp));
+
+    mockMvc
+        .perform(
+            post(PRESENT_ROAD_URI_2)
+                .content(
+                    "[{\n"
+                        + "  \"partition\": 1,\n"
+                        + "  \"key\": \"effort\",\n"
+                        + "  \"message\": {\n"
+                        + "    \"valid\": true\n"
+                        + "  }\n"
+                        + "}]")
+                .contentType(APPLICATION_JSON_UTF8))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].message", is("Message accepted.")))
         .andExpect(jsonPath("$[0].success", is(true)));
@@ -172,13 +228,27 @@ public class OnrampControllerTest {
   }
 
   @Test
+  public void roadClosed2() throws Exception {
+    given(onrampService.getOnramp(CLOSED_ROAD)).willReturn(Optional.of(closedOnramp));
+
+    mockMvc
+        .perform(
+            post(CLOSED_ROAD_URI_2)
+                .content("[{\"partition\": 1, \"key\": \"effort\", \"message\": {\"valid\": true}}]")
+                .contentType(APPLICATION_JSON_UTF8))
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(jsonPath("$.message", is("Road 'closed_road' is disabled, could not send events.")))
+        .andExpect(jsonPath("$.success", is(false)));
+  }
+
+  @Test
   public void invalidEvent() throws Exception {
     given(onrampService.getOnramp(PRESENT_ROAD)).willReturn(Optional.of(onramp));
 
     mockMvc
         .perform(post(PRESENT_ROAD_URI).content("[{\"valid\":false}]").contentType(APPLICATION_JSON_UTF8))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].message", is("The event failed validation. Invalid Event")))
+        .andExpect(jsonPath("$[0].message", is("The event failed validation. Invalid OnMessage")))
         .andExpect(jsonPath("$[0].success", is(false)));
   }
 
@@ -204,7 +274,7 @@ public class OnrampControllerTest {
         .perform(
             post(PRESENT_ROAD_URI).content("[{\"valid\":false},{\"valid\":true}]").contentType(APPLICATION_JSON_UTF8))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].message", is("The event failed validation. Invalid Event")))
+        .andExpect(jsonPath("$[0].message", is("The event failed validation. Invalid OnMessage")))
         .andExpect(jsonPath("$[0].success", is(false)))
         .andExpect(jsonPath("$[1].message", is("Message accepted.")))
         .andExpect(jsonPath("$[1].success", is(true)));
@@ -230,7 +300,7 @@ public class OnrampControllerTest {
     given(onrampService.getOnramp(PRESENT_ROAD)).willReturn(Optional.of(onramp));
     given(onramp.isAvailable()).willReturn(true);
     given(onramp.getSchemaVersion()).willReturn(schemaVersion);
-    given(onramp.sendEvent(any(JsonNode.class))).willReturn(future);
+    given(onramp.sendOnMessage(any(OnMessage.class), any(Instant.class))).willReturn(future);
     given(future.get()).willThrow(new InterruptedException("foo"));
 
     mockMvc
@@ -245,7 +315,8 @@ public class OnrampControllerTest {
   public void notAnArray() throws Exception {
     given(onrampService.getOnramp(PRESENT_ROAD)).willReturn(Optional.of(onramp));
 
-    mockMvc.perform(post(PRESENT_ROAD_URI).content("{\"valid\":true}").contentType(APPLICATION_JSON_UTF8)).andExpect(
-        status().isBadRequest());
+    mockMvc
+        .perform(post(PRESENT_ROAD_URI).content("{\"valid\":true}").contentType(APPLICATION_JSON_UTF8))
+        .andExpect(status().isBadRequest());
   }
 }

@@ -13,24 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.onramp.api;
+package com.hotels.road.rest.controller.common;
 
-public class Event<K, M> {
+import java.time.Clock;
 
-  private final K key;
-  private final M message;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-  public Event(K key, M message) {
-    this.key = key;
-    this.message = message;
+@Configuration
+public class CommonClockConfiguration {
+  @Bean
+  public Clock clock() {
+    return Clock.systemUTC();
   }
-
-  public K getKey() {
-    return key;
-  }
-
-  public M getMessage() {
-    return message;
-  }
-
 }

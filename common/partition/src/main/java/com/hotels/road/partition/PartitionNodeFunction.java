@@ -27,11 +27,11 @@ import com.hotels.road.partition.KeyPathParser.Path;
  * For a given {@link KeyPathParser.Path JsonPath}, returns the {@link JsonNode} fragment located within the provided
  * Json document.
  */
-class PartitionNodeFunction implements Function<JsonNode, JsonNode> {
+public class PartitionNodeFunction implements Function<JsonNode, JsonNode> {
 
   private final JsonPointer pointer;
 
-  PartitionNodeFunction(Path path) {
+  public PartitionNodeFunction(Path path) {
     // Currently KeyPathParser does not support '/' in names. However, escaping support has been added here in case that
     // changes.
     pointer = JsonPointer.compile(path

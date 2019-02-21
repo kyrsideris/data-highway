@@ -22,7 +22,9 @@ import static lombok.AccessLevel.PACKAGE;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.http.HttpEntity;
@@ -89,7 +91,15 @@ public class HttpHandler implements AutoCloseable {
   }
 
   public static HttpHandler onramp(OnrampOptions options) {
-    return new HttpHandler(createUri(options.getHost(), "onramp", "v1"), options);
+    return onramp(options, "v1");
+  }
+
+  public static HttpHandler onramp(OnrampOptions options, String version) {
+    List<String> supportedVersions = Arrays.asList("v1", "v2");
+    if (supportedVersions.contains(version)){
+      return new HttpHandler(createUri(options.getHost(), "onramp", version), options);
+    }
+    return null;
   }
 
   private static URI createUri(String host, String app, String version) {

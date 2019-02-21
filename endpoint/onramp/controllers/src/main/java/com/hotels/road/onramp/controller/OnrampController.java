@@ -15,14 +15,17 @@
  */
 package com.hotels.road.onramp.controller;
 
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.stream;
-
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -33,7 +36,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -42,27 +44,29 @@ import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import com.hotels.road.exception.InvalidEventException;
 import com.hotels.road.exception.RoadUnavailableException;
 import com.hotels.road.exception.ServiceException;
 import com.hotels.road.exception.UnknownRoadException;
+import com.hotels.road.onramp.api.OnMessage;
 import com.hotels.road.onramp.api.Onramp;
 import com.hotels.road.onramp.api.OnrampService;
 import com.hotels.road.rest.model.StandardResponse;
 
 @Api(tags = "onramp")
 @RestController
-@RequestMapping("/onramp/v1")
+@RequestMapping("/onramp")
 @RequiredArgsConstructor
 @Slf4j
 public class OnrampController {
+
   private static final String MESSAGE_ACCEPTED = "Message accepted.";
 
   private final OnrampService service;
   private final MeterRegistry registry;
+  private final Clock clock;
 
   @ApiOperation(value = "Sends a given array of messages to a road")
   @ApiResponses({
@@ -71,22 +75,49 @@ public class OnrampController {
       @ApiResponse(code = 404, message = "Road not found.", response = StandardResponse.class),
       @ApiResponse(code = 422, message = "Road not enabled.", response = StandardResponse.class) })
   @PreAuthorize("@onrampAuthorisation.isAuthorised(authentication,#roadName)")
-  @PostMapping(path = "/roads/{roadName}/messages")
-  public Iterable<StandardResponse> produce(@PathVariable String roadName, @RequestBody ArrayNode json)
-    throws UnknownRoadException, InterruptedException {
-    DistributionSummary.builder("onramp.request").tag("road", roadName).register(registry).record(json.size());
+  @PostMapping(path = "/v1/roads/{roadName}/messages")
+  public List<StandardResponse> produce(@PathVariable String roadName, @RequestBody Iterable<ObjectNode> messages)
+      throws UnknownRoadException, InterruptedException {
+    return sendMessages(
+        roadName,
+        StreamSupport.stream(messages.spliterator(), false)
+            .map(message -> new OnMessage(null, message)));
+  }
+
+  @ApiOperation(value = "Sends a given array of messages to a road")
+  @ApiResponses({
+      @ApiResponse(code = 200, message = "Messages have been sent successfully.", response = StandardResponse.class),
+      @ApiResponse(code = 400, message = "Bad Request.", response = StandardResponse.class),
+      @ApiResponse(code = 404, message = "Road not found.", response = StandardResponse.class),
+      @ApiResponse(code = 422, message = "Road not enabled.", response = StandardResponse.class) })
+  @PreAuthorize("@onrampAuthorisation.isAuthorised(authentication,#roadName)")
+  @PostMapping(path = "/v2/roads/{roadName}/messages")
+  public List<StandardResponse> produceV2(@PathVariable String roadName, @RequestBody Iterable<OnMessage> messages)
+      throws UnknownRoadException, InterruptedException {
+    return sendMessages(
+        roadName,
+        StreamSupport.stream(messages.spliterator(), false));
+  }
+
+  private Onramp getOnramp(String roadName) throws UnknownRoadException {
     Onramp onramp = service.getOnramp(roadName).orElseThrow(() -> new UnknownRoadException(roadName));
     if (!onramp.isAvailable()) {
       throw new RoadUnavailableException(String.format("Road '%s' is disabled, could not send events.", roadName));
     }
-    return sendMessages(onramp, json);
+    return onramp;
   }
 
-  private Iterable<StandardResponse> sendMessages(Onramp onramp, Iterable<JsonNode> json) throws InterruptedException {
-    return stream(json.spliterator(), false).map(onramp::sendEvent).map(this::translateFuture).collect(toList());
+  private List<StandardResponse> sendMessages(String roadName, Stream<OnMessage> messages)
+      throws ServiceException, UnknownRoadException {
+    Onramp onramp = getOnramp(roadName);
+    Instant time = clock.instant();
+    return messages
+        .map(m -> onramp.sendOnMessage(m, time))
+        .map(this::translateFuture)
+        .collect(Collectors.toList());
   }
 
-  private StandardResponse translateFuture(Future<Boolean> future) {
+  private StandardResponse translateFuture(Future<Boolean> future) throws ServiceException {
     try {
       future.get();
       return StandardResponse.successResponse(MESSAGE_ACCEPTED);

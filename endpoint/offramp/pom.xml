@@ -20,6 +20,7 @@
     <module>kafka</module>
     <module>app</module>
     <module>integration-tests</module>
+    <module>utilities</module>
   </modules>
 
 </project>

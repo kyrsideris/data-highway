@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.onramp.api;
+package com.hotels.road.offramp.utilities;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import java.nio.ByteBuffer;
 
-import org.junit.Test;
+import com.hotels.road.offramp.api.Payload;
 
-public class EventTest {
-
-  @Test
-  public void testThatGettersMapFieldsCorrectly() {
-    Event<Integer, String> event = new Event<>(1, "a");
-    assertThat(event.getKey(), is(1));
-    assertThat(event.getMessage(), is("a"));
+public class PayloadDeserializer implements BaseDeserializer<Payload<byte[]>> {
+  @Override
+  public Payload<byte[]> deserialize(String topic, byte[] data) {
+    ByteBuffer buffer = ByteBuffer.wrap(data);
+    byte formatVersion = buffer.get();
+    int schemaVersion = buffer.getInt();
+    byte[] message = new byte[buffer.remaining()];
+    buffer.get(message);
+    return new Payload<>(formatVersion, schemaVersion, message);
   }
-
 }

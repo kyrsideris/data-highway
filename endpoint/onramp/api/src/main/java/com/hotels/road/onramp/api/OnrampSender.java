@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.offramp.kafka;
+package com.hotels.road.onramp.api;
 
-import java.nio.ByteBuffer;
+import java.util.concurrent.Future;
 
-import com.hotels.road.offramp.api.Payload;
+import com.hotels.road.model.core.InnerMessage;
+import com.hotels.road.model.core.Road;
 
-class PayloadDeserializer implements BaseDeserializer<Payload<byte[]>> {
-  @Override
-  public Payload<byte[]> deserialize(String topic, byte[] data) {
-    ByteBuffer buffer = ByteBuffer.wrap(data);
-    byte formatVersion = buffer.get();
-    int schemaVersion = buffer.getInt();
-    byte[] message = new byte[buffer.remaining()];
-    buffer.get(message);
-    return new Payload<>(formatVersion, schemaVersion, message);
-  }
+public interface OnrampSender {
+  int getPartitionCount(Road road);
+
+  Future<Boolean> sendInnerMessage(Road road, InnerMessage message);
 }

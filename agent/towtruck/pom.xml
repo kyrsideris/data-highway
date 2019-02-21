@@ -23,6 +23,11 @@
     </dependency>
     <dependency>
       <groupId>com.hotels.road</groupId>
+      <artifactId>road-controllers-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.hotels.road</groupId>
       <artifactId>road-kafka-store</artifactId>
       <version>${project.version}</version>
     </dependency>

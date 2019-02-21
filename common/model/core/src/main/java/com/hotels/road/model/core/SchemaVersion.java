@@ -15,6 +15,7 @@
  */
 package com.hotels.road.model.core;
 
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
@@ -42,11 +43,14 @@ public class SchemaVersion {
   }
 
   public static Optional<SchemaVersion> latest(Iterable<SchemaVersion> schemas) {
-    return StreamSupport.stream(schemas.spliterator(), false).filter(s -> !s.isDeleted()).max(
-        (s1, s2) -> s1.version - s2.version);
+    return StreamSupport.stream(schemas.spliterator(), false)
+        .filter(s -> !s.isDeleted())
+        .max(Comparator.comparingInt(s -> s.version));
   }
 
   public static Optional<SchemaVersion> version(Iterable<SchemaVersion> schemas, int version) {
-    return StreamSupport.stream(schemas.spliterator(), false).filter(s -> s.version == version).findFirst();
+    return StreamSupport.stream(schemas.spliterator(), false)
+        .filter(s -> s.version == version)
+        .findFirst();
   }
 }
