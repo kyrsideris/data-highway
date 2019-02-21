@@ -124,7 +124,7 @@ public class OnrampImpl implements Onramp {
   private int calculatePartition(OnMessage onMessage) {
 
     if (onMessage.getKey() != null) {
-      return onMessage.getKey().hashCode() % partitions;
+      return toPositive(onMessage.getKey().hashCode()) % partitions;
     }
 
     if (road.getPartitionPath() == null || road.getPartitionPath().isEmpty()) {

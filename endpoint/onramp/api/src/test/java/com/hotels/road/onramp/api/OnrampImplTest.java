@@ -74,16 +74,16 @@ public class OnrampImplTest {
   public void setUp() {
     when(roadNormal.getType()).thenReturn(RoadType.NORMAL);
     when(roadNormal.getSchemas()).thenReturn(singletonMap(schemaVersion.getVersion(), schemaVersion));
-    when(roadNormal.getPartitionPath()).thenReturn("$.udt.user.guid");
+    when(roadNormal.getPartitionPath()).thenReturn("$.id");
 
-    when(sender.getPartitionCount(eq(roadNormal))).thenReturn(1);
+    when(sender.getPartitionCount(eq(roadNormal))).thenReturn(36);
     underTestNormal = mockOnrampImplwithRoad(roadNormal);
 
     when(roadCompact.getType()).thenReturn(RoadType.COMPACT);
     when(roadCompact.getSchemas()).thenReturn(singletonMap(schemaVersion.getVersion(), schemaVersion));
-    when(roadCompact.getPartitionPath()).thenReturn("$.udt.user.guid");
+    when(roadCompact.getPartitionPath()).thenReturn("$.id");
 
-    when(sender.getPartitionCount(eq(roadCompact))).thenReturn(1);
+    when(sender.getPartitionCount(eq(roadCompact))).thenReturn(25);
     underTestCompact = mockOnrampImplwithRoad(roadCompact);
 
     ObjectNode value = mapper.createObjectNode().put("id", 123);
@@ -106,7 +106,7 @@ public class OnrampImplTest {
         is(future));
 
     InnerMessage innerMessage = innerMsgCaptor.getValue();
-    assertThat(innerMessage.getPartition(), is(0));
+    assertThat(innerMessage.getPartition(), is(1));
     assertThat(innerMessage.getTimestampMs(), is(time.toEpochMilli()));
     assertNull(innerMessage.getKey());
     byte[] message = innerMessage.getMessage();
@@ -116,6 +116,10 @@ public class OnrampImplTest {
     assertThat(
         underTestNormal.sendOnMessage(msgAllNotNull, time),
         is(future));
+
+    InnerMessage msgInnerAllNotNull = innerMsgCaptor.getValue();
+    assertThat(msgInnerAllNotNull.getPartition(), is(31));
+    assertThat(msgInnerAllNotNull.getKey(), is("my key".getBytes(UTF_8)));
   }
 
   @Test
@@ -150,7 +154,7 @@ public class OnrampImplTest {
         is(future));
 
     InnerMessage msgInnerNullMessage = innerMsgCaptor.getValue();
-    assertThat(msgInnerNullMessage.getPartition(), is(0));
+    assertThat(msgInnerNullMessage.getPartition(), is(18));
     assertThat(msgInnerNullMessage.getTimestampMs(), is(time.toEpochMilli()));
     assertThat(msgInnerNullMessage.getKey(), is("my key".getBytes(UTF_8)));
     assertNull(msgInnerNullMessage.getMessage());
@@ -160,13 +164,12 @@ public class OnrampImplTest {
         is(future));
 
     InnerMessage msgInnerAllNotNull = innerMsgCaptor.getValue();
-    assertThat(msgInnerAllNotNull.getPartition(), is(0));
+    assertThat(msgInnerAllNotNull.getPartition(), is(18));
     assertThat(msgInnerAllNotNull.getTimestampMs(), is(time.toEpochMilli()));
     assertThat(msgInnerAllNotNull.getKey(), is("my key".getBytes(UTF_8)));
     byte[] message = msgInnerAllNotNull.getMessage();
     assertThat(message[0], is((byte) 0x00));
     assertThat(Ints.fromBytes(message[1], message[2], message[3], message[4]), is(1));
-
   }
 
   @Test
