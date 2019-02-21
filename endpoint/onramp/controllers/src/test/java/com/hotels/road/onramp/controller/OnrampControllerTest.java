@@ -134,7 +134,7 @@ public class OnrampControllerTest {
   }
 
   Future<Boolean> mockSend(InvocationOnMock a) {
-    OnMessage onMessage = (OnMessage) (a.getArgument(0));
+    OnMessage onMessage = a.getArgument(0);
     if (onMessage.getMessage().get("valid").asBoolean()) {
       return immediateFuture(true);
     } else {

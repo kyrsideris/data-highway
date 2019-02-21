@@ -56,7 +56,6 @@ public class OnrampImplTest {
   private SchemaVersion schemaVersion = new SchemaVersion(schema, 1, false);
 
   private @Mock Road road;
-  private @Mock JsonNode jsonEvent;
   private @Mock OnrampSender sender;
   private @Mock Random random;
 
@@ -71,7 +70,7 @@ public class OnrampImplTest {
     underTest = mock(
         OnrampImpl.class,
         withSettings().useConstructor(road, sender, random).defaultAnswer(CALLS_REAL_METHODS));
-    onMessage = new OnMessage(0, null, mapper.createObjectNode().put("id", 123));
+    onMessage = new OnMessage(null, mapper.createObjectNode().put("id", 123));
   }
 
   @Test

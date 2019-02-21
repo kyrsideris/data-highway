@@ -29,7 +29,6 @@ public class OnMessageTest {
   @Test
   public void serialisation_test() throws Exception {
     String jsonText = "{\n"
-        + "  \"partition\": 1,\n"
         + "  \"key\": \"123\",\n"
         + "  \"message\": {\n"
         + "    \"name\": \"message_123\"\n"
@@ -38,24 +37,6 @@ public class OnMessageTest {
 
     OnMessage onMessage = mapper.readValue(jsonText, OnMessage.class);
 
-    assertThat(onMessage.getPartition(), is(1));
-    assertThat(onMessage.getKey(), is("123"));
-    assertThat(onMessage.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
-  }
-
-  @Test
-  public void with_null_partition() throws Exception {
-    String jsonText = "{\n"
-        + "  \"partition\": null,\n"
-        + "  \"key\": \"123\",\n"
-        + "  \"message\": {\n"
-        + "    \"name\": \"message_123\"\n"
-        + "  }\n"
-        + "}";
-
-    OnMessage onMessage = mapper.readValue(jsonText, OnMessage.class);
-
-    assertThat(onMessage.getPartition(), is(nullValue()));
     assertThat(onMessage.getKey(), is("123"));
     assertThat(onMessage.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
   }
@@ -63,7 +44,6 @@ public class OnMessageTest {
   @Test
   public void with_null_key() throws Exception {
     String jsonText = "{\n"
-        + "  \"partition\": 1,\n"
         + "  \"key\": null,\n"
         + "  \"message\": {\n"
         + "    \"name\": \"message_123\"\n"
@@ -72,7 +52,6 @@ public class OnMessageTest {
 
     OnMessage onMessage = mapper.readValue(jsonText, OnMessage.class);
 
-    assertThat(onMessage.getPartition(), is(1));
     assertThat(onMessage.getKey(), is(nullValue()));
     assertThat(onMessage.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
   }
@@ -80,14 +59,12 @@ public class OnMessageTest {
   @Test
   public void with_null_message() throws Exception {
     String jsonText = "{\n"
-        + "  \"partition\": 1,\n"
         + "  \"key\": \"123\",\n"
         + "  \"message\": null\n"
         + "}";
 
     OnMessage onMessage = mapper.readValue(jsonText, OnMessage.class);
 
-    assertThat(onMessage.getPartition(), is(1));
     assertThat(onMessage.getKey(), is("123"));
     assertThat(onMessage.getMessage(), is(nullValue()));
   }

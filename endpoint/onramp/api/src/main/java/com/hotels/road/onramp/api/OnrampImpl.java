@@ -94,23 +94,16 @@ public class OnrampImpl implements Onramp {
       // The following permutations are allowed:
       // nullable: null or not null
       //
-      // Type of Road | partition | key      | message
-      // -------------|-----------|----------|----------
-      //  NORMAL      | nullable  | nullable | not null
-      //  COMPACT     | null      | not null | nullable
+      // Type of Road | key      | message
+      // -------------|----------|----------
+      //  NORMAL      | nullable | not null
+      //  COMPACT     | not null | nullable
 
-      if (road.getType() == RoadType.NORMAL) {
-        if (onMessage.getMessage() == null) {
-          throw new InvalidEventException("OnMessage must contain a message");
-        }
+      if (road.getType() == RoadType.NORMAL && onMessage.getMessage() == null) {
+        throw new InvalidEventException("Normal road messages must contain a message");
       }
-      else if (road.getType() == RoadType.COMPACT){
-        if (onMessage.getPartition() != null) {
-          throw new InvalidEventException("Compact roads cannot specify partition");
-        }
-        if (onMessage.getKey() == null) {
-          throw new InvalidEventException("Compact roads must specify a key");
-        }
+      else if (road.getType() == RoadType.COMPACT && onMessage.getKey() == null){
+        throw new InvalidEventException("Compact road messages must specify a key");
       }
 
       try {
@@ -128,20 +121,7 @@ public class OnrampImpl implements Onramp {
     }
   }
 
-  private int calculatePartition(OnMessage onMessage) throws InvalidEventException {
-
-    Integer partition = onMessage.getPartition();
-    // TODO: COMPACTED throw and out of range exception for partition greater than available
-    if (partition != null) {
-      if (partition >= partitions) {
-        throw new InvalidEventException(
-            String.format("OnMessage with partition id %d exceeds range [0-%d] for road %s",
-                partition, partitions - 1, road.getName()));
-      }
-      else {
-        return onMessage.getPartition();
-      }
-    }
+  private int calculatePartition(OnMessage onMessage) {
 
     if (onMessage.getKey() != null) {
       return onMessage.getKey().hashCode() % partitions;

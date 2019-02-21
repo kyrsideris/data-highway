@@ -124,7 +124,7 @@ public class TestDriveAppTest {
       assertThat(message.getPayload(), is(payload));
     }
 
-    OnMessage messageV2 = new OnMessage(0, "key1", payload);
+    OnMessage messageV2 = new OnMessage("key1", payload);
     JsonNode messageV2JsonNode = mapper.valueToTree(messageV2);
 
     try (RoadClient<JsonNode> onrampV2 = new SimpleRoadClient<>(onOptions, "v2")) {

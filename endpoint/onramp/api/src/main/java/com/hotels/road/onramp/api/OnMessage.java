@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 @Value
 public class OnMessage {
-  Integer partition;
   String key;
   ObjectNode message;
 }

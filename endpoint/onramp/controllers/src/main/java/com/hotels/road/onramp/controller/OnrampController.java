@@ -81,7 +81,7 @@ public class OnrampController {
     return sendMessages(
         roadName,
         StreamSupport.stream(messages.spliterator(), false)
-            .map(message -> new OnMessage(null, null, message)));
+            .map(message -> new OnMessage(null, message)));
   }
 
   @ApiOperation(value = "Sends a given array of messages to a road")
@@ -98,14 +98,6 @@ public class OnrampController {
         roadName,
         StreamSupport.stream(messages.spliterator(), false));
   }
-
-  // TODO: Consider implementation of interface with partition, key and multiple messages
-  // Currently,
-  // - v1, we provide the interface with no partition and key to the user
-  // - v2, we can provide the interface with separate partition and key for every message to the user
-  //      { [ partition: int, key: string, message: string ] }
-  // - v2, we can provide the interface with partition and key for every message to the user
-  //      { partition: int, key: string, messages: [ string ] }
 
   private Onramp getOnramp(String roadName) throws UnknownRoadException {
     Onramp onramp = service.getOnramp(roadName).orElseThrow(() -> new UnknownRoadException(roadName));
