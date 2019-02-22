@@ -18,9 +18,6 @@ package com.hotels.road.onramp.api;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonMap;
 
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -33,17 +30,12 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -76,7 +68,6 @@ public class OnrampImplTest {
   private @Mock OnrampSender sender;
   private @Mock Random random;
   private final int mockedRandomInt = 11111;
-  private final int roadCompactNumPartitions = 25;
 
   private OnrampImpl underTestNormal;
   private OnrampImpl underTestCompact;
@@ -104,7 +95,7 @@ public class OnrampImplTest {
     when(roadCompact.getType()).thenReturn(RoadType.COMPACT);
     when(roadCompact.getSchemas()).thenReturn(singletonMap(schemaVersion.getVersion(), schemaVersion));
     when(roadCompact.getPartitionPath()).thenReturn("$.id");
-    when(sender.getPartitionCount(eq(roadCompact))).thenReturn(roadCompactNumPartitions);
+    when(sender.getPartitionCount(eq(roadCompact))).thenReturn(25);
     underTestCompact = mockOnrampImplwithRoad(roadCompact);
 
     // normal road configuration with partition path that is not correct
@@ -246,39 +237,6 @@ public class OnrampImplTest {
             + "The event failed validation. Compact road messages must specify a key",
         "Exception was not raised for null key and message on OnMessage!"
     );
-  }
-
-  @Test
-  public void sendOnMessage_uniform_destribution_of_partition_ids() throws Exception {
-    ArgumentCaptor<InnerMessage> captor = ArgumentCaptor.forClass(InnerMessage.class);
-    Future<Boolean> future = CompletableFuture.completedFuture(true);
-    when(sender.sendInnerMessage(eq(roadCompact), captor.capture())).thenReturn(future);
-
-    Instant time = Instant.now();
-    Random randomLength = new Random(time.toEpochMilli());
-    int maxKeySize = 2048;
-
-    int samplesPerPartition = 1000;
-    float errorMargin = 0.2f;
-    int sampleSize = roadCompactNumPartitions * samplesPerPartition;
-    Stream<Integer> counts = IntStream.range(0, sampleSize)
-        .parallel()
-        .mapToObj(i -> {
-          int keyLength = randomLength.nextInt(maxKeySize) & Integer.MAX_VALUE;
-          String key = RandomStringUtils.randomAscii(keyLength);
-          OnMessage msg = new OnMessage(key, null);
-          assertThat(underTestCompact.sendOnMessage(msg, time), is(future));
-          return captor.getValue().getPartition();
-        })
-        .collect(Collectors.groupingBy(i -> i))
-        .values()
-        .stream()
-        .map(List::size);
-
-    int margin = (int) Math.ceil(samplesPerPartition * errorMargin);
-    int lower = samplesPerPartition - margin;
-    int higher = samplesPerPartition + margin;
-    counts.forEach(count -> assertThat(count, allOf(greaterThan(lower), lessThan(higher))));
   }
 
   @Test
