@@ -91,14 +91,6 @@ public class OnrampImpl implements Onramp {
     long now = time.toEpochMilli();
     try {
 
-      // The following permutations are allowed:
-      // nullable: null or not null
-      //
-      // Type of Road | key      | message
-      // -------------|----------|----------
-      //  NORMAL      | nullable | not null
-      //  COMPACT     | not null | nullable
-
       if (road.getType() == RoadType.NORMAL && onMessage.getMessage() == null) {
         throw new InvalidEventException("Normal road messages must contain a message");
       }
