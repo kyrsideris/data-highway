@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.onramp.api;
+package com.hotels.road.partition;
 
 /**
  * Utilities copied from the org.apache.kafka.common.utils.Utils class in the Apache Kafka project

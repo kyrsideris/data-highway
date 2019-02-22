@@ -34,7 +34,6 @@ import static org.mockito.Mockito.withSettings;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -59,10 +58,12 @@ import com.google.common.primitives.Ints;
 import com.hotels.road.model.core.InnerMessage;
 import com.hotels.road.model.core.Road;
 import com.hotels.road.model.core.SchemaVersion;
+import com.hotels.road.partition.RoadPartitioner;
 import com.hotels.road.rest.model.RoadType;
 
 @RunWith(MockitoJUnitRunner.class)
 public class OnrampImplTest {
+
   private final ObjectMapper mapper = new ObjectMapper();
 
   private Schema schema = SchemaBuilder.record("test_message").fields().requiredInt("id").endRecord();
@@ -121,10 +122,10 @@ public class OnrampImplTest {
     underTestNormalNullParPath = mockOnrampImplwithRoad(roadNormalNullParPath);
 
     ObjectNode valueOnPartition = mapper.createObjectNode().put("id", 123);
-    msgNullKey     = new OnMessage(null, valueOnPartition);
+    msgNullKey = new OnMessage(null, valueOnPartition);
     msgNullMessage = new OnMessage("my key", null);
-    msgAllNull     = new OnMessage(null, null);
-    msgAllNotNull  = new OnMessage("my key", valueOnPartition);
+    msgAllNull = new OnMessage(null, null);
+    msgAllNotNull = new OnMessage("my key", valueOnPartition);
 
     ObjectNode valueWithWrongSchema = mapper.createObjectNode().put("idy", 123);
     msgNullKeyWithWrongSchema = new OnMessage(null, valueWithWrongSchema);
@@ -140,7 +141,7 @@ public class OnrampImplTest {
 
     Instant time = Instant.now();
 
-    assertThat(underTestNormal.sendOnMessage(msgNullKey, time),is(future));
+    assertThat(underTestNormal.sendOnMessage(msgNullKey, time), is(future));
 
     InnerMessage innerMessage = innerMsgCaptor.getValue();
     assertThat(innerMessage.getPartition(), is(1));
@@ -150,13 +151,11 @@ public class OnrampImplTest {
     assertThat(message[0], is((byte) 0x00));
     assertThat(Ints.fromBytes(message[1], message[2], message[3], message[4]), is(1));
 
-
     assertThat(underTestNormal.sendOnMessage(msgAllNotNull, time), is(future));
 
     InnerMessage msgInnerAllNotNull = innerMsgCaptor.getValue();
     assertThat(msgInnerAllNotNull.getPartition(), is(31));
     assertThat(msgInnerAllNotNull.getKey(), is("my key".getBytes(UTF_8)));
-
 
     mockRandomness(sender.getPartitionCount(roadNormalWoParPath));
 
@@ -164,7 +163,6 @@ public class OnrampImplTest {
     assertThat(
         innerMsgCaptor.getValue().getPartition(),
         is(expectedRandomness(sender.getPartitionCount(roadNormalWoParPath))));
-
 
     mockRandomness(sender.getPartitionCount(roadNormalNullParPath));
 
@@ -198,7 +196,6 @@ public class OnrampImplTest {
             + "The event failed validation. Field 'id': cannot make '\"int\"' value: 'null'",
         "Exception was not raised for message not conforming to schema!"
     );
-
   }
 
   @Test
@@ -284,7 +281,7 @@ public class OnrampImplTest {
     counts.forEach(count -> assertThat(count, allOf(greaterThan(lower), lessThan(higher))));
   }
 
-    @Test
+  @Test
   public void roadIsAvailable() {
     when(roadNormal.isEnabled()).thenReturn(true);
 
@@ -300,7 +297,6 @@ public class OnrampImplTest {
     assertThat(underTestNormal.getRoad(), is(roadNormal));
   }
 
-
   void assertFailedFuture(Future<Boolean> future, String expected, String clue) {
     try {
       future.get();
@@ -313,7 +309,12 @@ public class OnrampImplTest {
   OnrampImpl mockOnrampImplwithRoad(Road road) {
     return mock(
         OnrampImpl.class,
-        withSettings().useConstructor(road, sender, random).defaultAnswer(CALLS_REAL_METHODS));
+        withSettings()
+            .useConstructor(
+                road,
+                sender,
+                new RoadPartitioner(sender.getPartitionCount(road), random))
+            .defaultAnswer(CALLS_REAL_METHODS));
   }
 
   void mockRandomness(int partitions) {

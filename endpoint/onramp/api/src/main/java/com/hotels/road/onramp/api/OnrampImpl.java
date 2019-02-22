@@ -17,14 +17,8 @@ package com.hotels.road.onramp.api;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import static com.google.common.primitives.Ints.toByteArray;
-
-import static com.hotels.road.onramp.api.Utils.murmur2;
-import static com.hotels.road.onramp.api.Utils.toPositive;
-
 import java.time.Instant;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
@@ -42,32 +36,31 @@ import com.hotels.road.model.core.Road;
 import com.hotels.road.model.core.SchemaVersion;
 import com.hotels.road.partition.KeyPathParser;
 import com.hotels.road.partition.PartitionNodeFunction;
+import com.hotels.road.partition.RoadPartitioner;
 import com.hotels.road.rest.model.RoadType;
 
 public class OnrampImpl implements Onramp {
 
   private final @NonNull @Getter Road road;
   private final @NonNull OnrampSender sender;
-  private final @NonNull Random random;
+  private final @NonNull RoadPartitioner partitioner;
 
-  private final int partitions;
   private final Function<String, byte[]> keyEncoder;
   private final Function<JsonNode, byte[]> valueEncoder;
   private final Function<JsonNode, JsonNode> partitionNodeFunction;
 
   public OnrampImpl(Road road, OnrampSender sender) {
-    this(road, sender, new Random());
+    this(road, sender, new RoadPartitioner(sender.getPartitionCount(road)));
   }
 
-  public OnrampImpl(Road road, OnrampSender sender, Random random) {
+  public OnrampImpl(Road road, OnrampSender sender, RoadPartitioner partitioner) {
     this.road = road;
     this.sender = sender;
-    this.random = random;
+    this.partitioner = partitioner;
 
-    partitions = sender.getPartitionCount(road);
     keyEncoder = key -> key == null ? null : key.getBytes(UTF_8);
     valueEncoder = SchemaVersion.latest(road.getSchemas().values())
-        .map(schema -> (Function<JsonNode, byte[]>) new AvroJsonEncoder(schema) )
+        .map(schema -> (Function<JsonNode, byte[]>) new AvroJsonEncoder(schema))
         .orElse(this::noSchemaEncode);
 
     partitionNodeFunction = Optional
@@ -93,8 +86,7 @@ public class OnrampImpl implements Onramp {
 
       if (road.getType() == RoadType.NORMAL && onMessage.getMessage() == null) {
         throw new InvalidEventException("Normal road messages must contain a message");
-      }
-      else if (road.getType() == RoadType.COMPACT && onMessage.getKey() == null){
+      } else if (road.getType() == RoadType.COMPACT && onMessage.getKey() == null) {
         throw new InvalidEventException("Compact road messages must specify a key");
       }
 
@@ -116,25 +108,20 @@ public class OnrampImpl implements Onramp {
   private int calculatePartition(OnMessage onMessage) {
 
     if (onMessage.getKey() != null) {
-      return toPositive(onMessage.getKey().hashCode()) % partitions;
+      return partitioner.partitionWithKey(onMessage.getKey());
     }
 
     if (road.getPartitionPath() == null || road.getPartitionPath().isEmpty()) {
-      return random.nextInt(partitions);
+      return partitioner.partitionRandomly();
     }
 
     JsonNode partitionValue = partitionNodeFunction.apply(onMessage.getMessage());
 
     if (partitionValue == null || partitionValue.isMissingNode()) {
-      return random.nextInt(partitions);
+      return partitioner.partitionRandomly();
     }
 
-    // This repeats what Data Highway and Kafka together were doing to calculate partitions before we pulled this up to
-    // the business logic layer.
-    // Previously DH took the hashCode of the partition path value and converted it to a 4 byte array passing the result
-    // as the key to Kafka. Kafka would then take the murmur2 hash value of those bytes and mask off the top bit to keep
-    // the result positive. Finally Kafka would then take the modulus of the number of partitions.
-    return toPositive(murmur2(toByteArray(partitionValue.hashCode()))) % partitions;
+    return partitioner.partitionWithPartitionValue(partitionValue);
   }
 
   @Override
