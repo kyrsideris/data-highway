@@ -40,7 +40,7 @@ public class RoadPartitioner {
   }
 
   public int partitionWithKey(String key) {
-    return Math.abs(key.hashCode()) % partitions;
+    return naivePositive(key.hashCode()) % partitions;
   }
 
   public int partitionRandomly() {
