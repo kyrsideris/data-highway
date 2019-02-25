@@ -29,7 +29,7 @@ import com.hotels.road.rest.model.RoadType;
 @lombok.Builder
 public class HiveRoad {
   private final String name;
-  private RoadType type;
+  private final RoadType type;
   private final String topicName;
   private final Map<Integer, SchemaVersion> schemas;
   private final Destinations destinations;
