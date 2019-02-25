@@ -81,9 +81,7 @@ public class OnrampImpl implements Onramp {
 
   @Override
   public Future<Boolean> sendOnMessage(OnMessage onMessage, Instant time) {
-    long now = time.toEpochMilli();
     try {
-
       if (road.getType() == RoadType.NORMAL && onMessage.getMessage() == null) {
         throw new InvalidEventException("Normal road messages must contain a message");
       } else if (road.getType() == RoadType.COMPACT && onMessage.getKey() == null) {
@@ -94,7 +92,7 @@ public class OnrampImpl implements Onramp {
         int partition = calculatePartition(onMessage);
         byte[] key = keyEncoder.apply(onMessage.getKey());
         byte[] message = valueEncoder.apply(onMessage.getMessage());
-        InnerMessage innerMessage = new InnerMessage(partition, now, key, message);
+        InnerMessage innerMessage = new InnerMessage(partition, time.toEpochMilli(), key, message);
 
         return sender.sendInnerMessage(road, innerMessage);
       } catch (JasvornoConverterException e) {
