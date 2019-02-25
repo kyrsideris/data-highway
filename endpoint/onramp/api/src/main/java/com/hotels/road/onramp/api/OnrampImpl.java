@@ -81,25 +81,21 @@ public class OnrampImpl implements Onramp {
 
   @Override
   public Future<Boolean> sendOnMessage(OnMessage onMessage, Instant time) {
+    if (road.getType() == RoadType.NORMAL && onMessage.getMessage() == null) {
+      return Futures.immediateFailedFuture(new InvalidEventException("Normal road messages must contain a message"));
+    } else if (road.getType() == RoadType.COMPACT && onMessage.getKey() == null) {
+      return Futures.immediateFailedFuture(new InvalidEventException("Compact road messages must specify a key"));
+    }
+
     try {
-      if (road.getType() == RoadType.NORMAL && onMessage.getMessage() == null) {
-        throw new InvalidEventException("Normal road messages must contain a message");
-      } else if (road.getType() == RoadType.COMPACT && onMessage.getKey() == null) {
-        throw new InvalidEventException("Compact road messages must specify a key");
-      }
+      int partition = calculatePartition(onMessage);
+      byte[] key = keyEncoder.apply(onMessage.getKey());
+      byte[] message = valueEncoder.apply(onMessage.getMessage());
+      InnerMessage innerMessage = new InnerMessage(partition, time.toEpochMilli(), key, message);
 
-      try {
-        int partition = calculatePartition(onMessage);
-        byte[] key = keyEncoder.apply(onMessage.getKey());
-        byte[] message = valueEncoder.apply(onMessage.getMessage());
-        InnerMessage innerMessage = new InnerMessage(partition, time.toEpochMilli(), key, message);
-
-        return sender.sendInnerMessage(road, innerMessage);
-      } catch (JasvornoConverterException e) {
-        throw new InvalidEventException(e.getMessage());
-      }
-    } catch (InvalidEventException e) {
-      return Futures.immediateFailedFuture(e);
+      return sender.sendInnerMessage(road, innerMessage);
+    } catch (JasvornoConverterException e) {
+      return Futures.immediateFailedFuture(new InvalidEventException(e.getMessage()));
     }
   }
 
