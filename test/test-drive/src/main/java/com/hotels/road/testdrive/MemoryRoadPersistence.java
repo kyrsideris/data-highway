@@ -37,7 +37,7 @@ import com.hotels.road.offramp.api.SchemaProvider;
 import com.hotels.road.offramp.api.UnknownRoadException;
 import com.hotels.road.offramp.model.DefaultOffset;
 import com.hotels.road.offramp.utilities.AvroPayloadDecoder;
-import com.hotels.road.offramp.utilities.BaseDeserializer;
+import com.hotels.road.offramp.utilities.Deserializer;
 import com.hotels.road.offramp.utilities.PayloadDeserializer;
 
 import lombok.Data;
@@ -54,7 +54,7 @@ public class MemoryRoadPersistence {
   private final AvroPayloadDecoder payloadDecoder = new AvroPayloadDecoder();
 
   private static final Function<byte[], String> keyDeserializer = key -> key == null ? null : new String(key, UTF_8);
-  private static final BaseDeserializer<Payload<byte[]>> valueDeserializer = new PayloadDeserializer();
+  private static final Deserializer<Payload<byte[]>> valueDeserializer = new PayloadDeserializer();
 
   public void write(String roadName, Integer partition, Long timestamp, byte[] key, byte[] value) {
 

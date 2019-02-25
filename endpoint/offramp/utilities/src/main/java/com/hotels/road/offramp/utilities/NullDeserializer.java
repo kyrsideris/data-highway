@@ -15,7 +15,7 @@
  */
 package com.hotels.road.offramp.utilities;
 
-class NullDeserializer implements BaseDeserializer<Void> {
+class NullDeserializer implements Deserializer<Void> {
   @Override
   public Void deserialize(String topic, byte[] data) {
     return null;

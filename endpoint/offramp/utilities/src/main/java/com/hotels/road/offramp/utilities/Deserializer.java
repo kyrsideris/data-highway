@@ -15,7 +15,7 @@
  */
 package com.hotels.road.offramp.utilities;
 
-public interface BaseDeserializer<T> {
+public interface Deserializer<T> {
   /**
    * Deserialize a record value from a byte array into a value or object.
    * @param topic topic associated with the data

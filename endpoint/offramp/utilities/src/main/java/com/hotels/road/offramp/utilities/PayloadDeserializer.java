@@ -19,7 +19,7 @@ import java.nio.ByteBuffer;
 
 import com.hotels.road.offramp.api.Payload;
 
-public class PayloadDeserializer implements BaseDeserializer<Payload<byte[]>> {
+public class PayloadDeserializer implements Deserializer<Payload<byte[]>> {
   @Override
   public Payload<byte[]> deserialize(String topic, byte[] data) {
     ByteBuffer buffer = ByteBuffer.wrap(data);

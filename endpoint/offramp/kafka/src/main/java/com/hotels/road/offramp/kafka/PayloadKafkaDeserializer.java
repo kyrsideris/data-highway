@@ -20,4 +20,4 @@ import com.hotels.road.offramp.utilities.PayloadDeserializer;
 
 public class PayloadKafkaDeserializer
     extends PayloadDeserializer
-    implements BaseKafkaDeserializer<Payload<byte[]>> {}
+    implements KafkaDeserializer<Payload<byte[]>> {}

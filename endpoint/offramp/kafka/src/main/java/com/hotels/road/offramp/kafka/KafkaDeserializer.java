@@ -17,11 +17,9 @@ package com.hotels.road.offramp.kafka;
 
 import java.util.Map;
 
-import org.apache.kafka.common.serialization.Deserializer;
-
-import com.hotels.road.offramp.utilities.BaseDeserializer;
-
-interface BaseKafkaDeserializer<T> extends Deserializer<T>, BaseDeserializer<T> {
+interface KafkaDeserializer<T> extends
+    org.apache.kafka.common.serialization.Deserializer<T>,
+    com.hotels.road.offramp.utilities.Deserializer<T> {
   @Override
   default void configure(Map<String, ?> configs, boolean isKey) {}
 
