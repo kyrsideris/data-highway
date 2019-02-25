@@ -67,18 +67,4 @@ public class Utils {
 
     return h;
   }
-
-  /**
-   * A cheap way to deterministically convert a number to a positive value. When the input is positive, the original
-   * value is returned. When the input number is negative, the returned positive value is the original value bit AND
-   * against 0x7fffffff which is not its absolutely value. Note: changing this method in the future will possibly cause
-   * partition selection not to be compatible with the existing messages already placed on a partition since it is used
-   * in producer's org.apache.kafka.clients.producer.internals.DefaultPartitioner
-   *
-   * @param number a given number
-   * @return a positive number.
-   */
-  public static int toPositive(int number) {
-    return number & 0x7fffffff;
-  }
 }

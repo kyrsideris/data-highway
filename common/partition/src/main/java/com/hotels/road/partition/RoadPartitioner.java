@@ -18,7 +18,6 @@ package com.hotels.road.partition;
 import static com.google.common.primitives.Ints.toByteArray;
 
 import static com.hotels.road.partition.Utils.murmur2;
-import static com.hotels.road.partition.Utils.toPositive;
 
 import java.util.Random;
 
@@ -55,5 +54,19 @@ public class RoadPartitioner {
     // as the key to Kafka. Kafka would then take the murmur2 hash value of those bytes and mask off the top bit to keep
     // the result positive. Finally Kafka would then take the modulus of the number of partitions.
     return toPositive(murmur2(toByteArray(partitionValue.hashCode()))) % partitions;
+  }
+
+  /**
+   * A cheap way to deterministically convert a number to a positive value. When the input is positive, the original
+   * value is returned. When the input number is negative, the returned positive value is the original value bit AND
+   * against 0x7fffffff which is not its absolutely value. Note: changing this method in the future will possibly cause
+   * partition selection not to be compatible with the existing messages already placed on a partition since it is used
+   * in producer's org.apache.kafka.clients.producer.internals.DefaultPartitioner
+   *
+   * @param number a given number
+   * @return a positive number.
+   */
+  private int toPositive(int number) {
+    return number & 0x7fffffff;
   }
 }
