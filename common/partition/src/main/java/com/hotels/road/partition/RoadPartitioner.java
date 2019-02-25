@@ -40,7 +40,7 @@ public class RoadPartitioner {
   }
 
   public int partitionWithKey(String key) {
-    return toPositive(key.hashCode()) % partitions;
+    return Math.abs(key.hashCode()) % partitions;
   }
 
   public int partitionRandomly() {
@@ -53,7 +53,7 @@ public class RoadPartitioner {
     // Previously DH took the hashCode of the partition path value and converted it to a 4 byte array passing the result
     // as the key to Kafka. Kafka would then take the murmur2 hash value of those bytes and mask off the top bit to keep
     // the result positive. Finally Kafka would then take the modulus of the number of partitions.
-    return toPositive(murmur2(toByteArray(partitionValue.hashCode()))) % partitions;
+    return naivePositive(murmur2(toByteArray(partitionValue.hashCode()))) % partitions;
   }
 
   /**
@@ -63,10 +63,14 @@ public class RoadPartitioner {
    * partition selection not to be compatible with the existing messages already placed on a partition since it is used
    * in producer's org.apache.kafka.clients.producer.internals.DefaultPartitioner
    *
+   * Note:
+   *  -- naivePositive(-2147483648) == 0,
+   *  -- Copied from the org.apache.kafka.common.utils.Utils class in the Apache Kafka project
+   *
    * @param number a given number
    * @return a positive number.
    */
-  private int toPositive(int number) {
+  private int naivePositive(int number) {
     return number & 0x7fffffff;
   }
 }

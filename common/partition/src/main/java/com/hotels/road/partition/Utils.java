@@ -18,14 +18,14 @@ package com.hotels.road.partition;
 /**
  * Utilities copied from the org.apache.kafka.common.utils.Utils class in the Apache Kafka project
  */
-public class Utils {
+class Utils {
   /**
    * Generates 32 bit murmur2 hash from byte array
    *
    * @param data byte array to hash
    * @return 32 bit hash of the given array
    */
-  public static int murmur2(final byte[] data) {
+  static int murmur2(final byte[] data) {
     int length = data.length;
     int seed = 0x9747b28c;
     // 'm' and 'r' are mixing constants generated offline.
