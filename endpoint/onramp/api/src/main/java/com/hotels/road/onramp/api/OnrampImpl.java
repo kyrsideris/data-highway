@@ -82,10 +82,10 @@ public class OnrampImpl implements Onramp {
   @Override
   public Future<Boolean> sendOnMessage(OnMessage onMessage, Instant time) {
 
-    if (RoadType.NORMAL.equals(road.getType()) && onMessage.getMessage() == null) {
+    if (RoadType.NORMAL == road.getType() && onMessage.getMessage() == null) {
       return Futures.immediateFailedFuture(new InvalidEventException("Normal road messages must contain a message"));
 
-    } else if (RoadType.COMPACT.equals(road.getType()) && onMessage.getKey() == null) {
+    } else if (RoadType.COMPACT == road.getType() && onMessage.getKey() == null) {
       return Futures.immediateFailedFuture(new InvalidEventException("Compact road messages must specify a key"));
     }
 
