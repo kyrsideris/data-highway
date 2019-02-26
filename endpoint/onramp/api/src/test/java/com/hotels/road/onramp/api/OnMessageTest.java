@@ -24,48 +24,37 @@ import org.junit.Test;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class OnMessageTest {
+
   private final ObjectMapper mapper = new ObjectMapper();
+
+  private final String key = "123";
+  private final String msg = "{\"name\": \"message_123\"}";
 
   @Test
   public void serialisation_test() throws Exception {
-    String jsonText = "{\n"
-        + "  \"key\": \"123\",\n"
-        + "  \"message\": {\n"
-        + "    \"name\": \"message_123\"\n"
-        + "  }\n"
-        + "}";
-
-    OnMessage onMessage = mapper.readValue(jsonText, OnMessage.class);
-
-    assertThat(onMessage.getKey(), is("123"));
+    OnMessage onMessage = mapper.readValue(getJsonText(key, msg), OnMessage.class);
+    assertThat(onMessage.getKey(), is(key));
     assertThat(onMessage.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
   }
 
   @Test
   public void with_null_key() throws Exception {
-    String jsonText = "{\n"
-        + "  \"key\": null,\n"
-        + "  \"message\": {\n"
-        + "    \"name\": \"message_123\"\n"
-        + "  }\n"
-        + "}";
-
-    OnMessage onMessage = mapper.readValue(jsonText, OnMessage.class);
-
+    OnMessage onMessage = mapper.readValue(getJsonText(null, msg), OnMessage.class);
     assertThat(onMessage.getKey(), is(nullValue()));
     assertThat(onMessage.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
   }
 
   @Test
   public void with_null_message() throws Exception {
-    String jsonText = "{\n"
-        + "  \"key\": \"123\",\n"
-        + "  \"message\": null\n"
-        + "}";
-
-    OnMessage onMessage = mapper.readValue(jsonText, OnMessage.class);
-
-    assertThat(onMessage.getKey(), is("123"));
+    OnMessage onMessage = mapper.readValue(getJsonText(key, null), OnMessage.class);
+    assertThat(onMessage.getKey(), is(key));
     assertThat(onMessage.getMessage(), is(nullValue()));
+  }
+
+  private String getJsonText(String key, String message) {
+    return "{\n"
+        + "  \"key\": " + (key == null ? "null" : "\"" + key + "\"") + ",\n"
+        + "  \"message\": " + message + "\n"
+        + "}";
   }
 }
