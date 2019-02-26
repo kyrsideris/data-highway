@@ -56,18 +56,18 @@ public class MemoryRoadPersistence {
   private static final Function<byte[], String> keyDeserializer = key -> key == null ? null : new String(key, UTF_8);
   private static final Deserializer<Payload<byte[]>> valueDeserializer = new PayloadDeserializer();
 
-  public void write(String roadName, Integer partition, Long timestamp, byte[] key, byte[] value) {
+  public void write(String roadName, Integer partition, Long timestamp, byte[] binKey, byte[] binValue) {
 
     long offset = messages.computeIfAbsent(roadName, n -> new ArrayList<>()).size();
-    String k = keyDeserializer.apply(key);
-    Payload<byte[]> p = valueDeserializer.deserialize(roadName, value);
+    Payload<byte[]> value = valueDeserializer.deserialize(roadName, binValue);
+    Schema schema = schemaProvider.schema(roadName, value.getSchemaVersion());
+    JsonNode message = payloadDecoder.decode(schema, value.getMessage());
 
-    Schema schema = schemaProvider.schema(roadName, p.getSchemaVersion());
-    JsonNode message = payloadDecoder.decode(schema, p.getMessage());
-    Payload<JsonNode> payload = new Payload<>(p.getFormatVersion(), p.getSchemaVersion(), message);
-    Record r = new Record(partition, offset, timestamp, k, payload);
+    Record record = new Record(partition, offset, timestamp,
+        keyDeserializer.apply(binKey),
+        new Payload<>(value.getFormatVersion(), value.getSchemaVersion(), message));
 
-    this.messages.computeIfAbsent(roadName, name -> new ArrayList<>()).add(r);
+    this.messages.computeIfAbsent(roadName, name -> new ArrayList<>()).add(record);
   }
 
   public Iterable<Record> read(String roadName, String streamName, DefaultOffset defaultOffset)
