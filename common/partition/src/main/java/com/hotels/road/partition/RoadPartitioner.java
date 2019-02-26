@@ -71,6 +71,6 @@ public class RoadPartitioner {
    * @return a positive number.
    */
   private int naivePositive(int number) {
-    return number & 0x7fffffff;
+    return number & Integer.MAX_VALUE;
   }
 }
