@@ -44,6 +44,8 @@ import com.google.common.io.CharStreams;
 import com.hotels.road.client.RoadClient;
 import com.hotels.road.client.http.HttpHandler;
 import com.hotels.road.client.OnrampOptions;
+import com.hotels.road.onramp.version.OnrampVersion;
+import com.hotels.road.rest.model.Authorisation;
 import com.hotels.road.rest.model.StandardResponse;
 import com.hotels.road.tls.TLSConfig;
 
@@ -110,12 +112,16 @@ public class SimpleRoadClient<T> implements RoadClient<T> {
     this(toOptions(host, username, password, roadName, threads, tlsConfig, objectMapper));
   }
 
-  public SimpleRoadClient(OnrampOptions options, String version) {
+  public SimpleRoadClient(OnrampOptions options, String version) throws IllegalArgumentException{
+    this(options, OnrampVersion.fromStringStrict(version));
+  }
+
+  public SimpleRoadClient(OnrampOptions options, OnrampVersion version) {
     this(HttpHandler.onramp(options, version), options.getRoadName(), options.getObjectMapper());
   }
 
   public SimpleRoadClient(OnrampOptions options) {
-    this(options, "v1");
+    this(options, OnrampVersion.ONRAMP_1);
   }
 
   @Override

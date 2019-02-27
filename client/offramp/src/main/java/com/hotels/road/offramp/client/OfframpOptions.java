@@ -40,6 +40,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.hotels.road.offramp.model.DefaultOffset;
+import com.hotels.road.offramp.version.OfframpVersion;
 import com.hotels.road.rest.model.Sensitivity;
 import com.hotels.road.tls.TLSConfig;
 
@@ -64,9 +65,16 @@ public class OfframpOptions<T> implements Serializable {
   private final @Getter(PACKAGE) TLSConfig.Factory tlsConfigFactory;
 
   URI uri() {
+    return uri(OfframpVersion.OFFRAMP_2);
+  }
+
+  URI uri(OfframpVersion version) {
+    if (version.toApiVersion() == null) {
+      return null;
+    }
     String grantsParam = grants.stream().map(Sensitivity::name).collect(joining(","));
-    return URI.create(String.format("wss://%s/offramp/v2/roads/%s/streams/%s/messages?defaultOffset=%s&grants=%s", host,
-        roadName, streamName, defaultOffset.name(), grantsParam));
+    return URI.create(String.format("wss://%s/offramp/%s/roads/%s/streams/%s/messages?defaultOffset=%s&grants=%s",
+        host, version.toApiVersion(), roadName, streamName, defaultOffset.name(), grantsParam));
   }
 
   ObjectMapper objectMapper() {

@@ -16,7 +16,9 @@
 package com.hotels.road.client.http;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -45,6 +47,8 @@ import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.io.CharStreams;
 
+import com.hotels.road.onramp.version.OnrampVersion;
+import com.hotels.road.paver.version.PaverVersion;
 import com.hotels.road.tls.TLSConfig;
 import com.hotels.road.client.OnrampOptions;
 
@@ -102,10 +106,72 @@ public class HttpHandlerTest {
   }
 
   @Test
+  public void paverWithEnum() throws Exception  {
+    HttpHandler handler = HttpHandler.paver(options.withHost("host"), PaverVersion.PAVER_1);
+
+    assertThat(handler.getUrl(), is(URI.create("https://host/paver/v1/")));
+  }
+
+  @Test
+  public void paverWithWrongEnum() throws Exception  {
+    HttpHandler handler = HttpHandler.paver(options.withHost("host"), PaverVersion.UNKNOWN);
+
+    assertNull(handler);
+  }
+
+  @Test
+  public void paverWithString() throws Exception  {
+    HttpHandler handler = HttpHandler.paver(options.withHost("host"), "1");
+
+    assertThat(handler.getUrl(), is(URI.create("https://host/paver/v1/")));
+  }
+
+  @Test
+  public void paverWithWrongString() throws Exception  {
+    try {
+      HttpHandler.paver(options.withHost("host"), "0");
+      fail("Should throw exception when creating HttpHandler with wrong onramp version");
+    } catch (Exception e) {
+      assertThat(e.getMessage(), is("Unknown version \"0\" was used"));
+    }
+  }
+
+  @Test
   public void onramp() throws Exception  {
     HttpHandler handler = HttpHandler.onramp(options);
 
     assertThat(handler.getUrl(), is(URI.create("https://host/onramp/v1/")));
+  }
+
+  @Test
+  public void onrampWithEnum() throws Exception  {
+    HttpHandler handler = HttpHandler.onramp(options.withHost("host"), OnrampVersion.ONRAMP_1);
+
+    assertThat(handler.getUrl(), is(URI.create("https://host/onramp/v1/")));
+  }
+
+  @Test
+  public void onrampWithWrongEnum() throws Exception  {
+    HttpHandler handler = HttpHandler.onramp(options.withHost("host"), OnrampVersion.UNKNOWN);
+
+    assertNull(handler);
+  }
+
+  @Test
+  public void onrampWithString() throws Exception  {
+    HttpHandler handler = HttpHandler.onramp(options.withHost("host"), "1");
+
+    assertThat(handler.getUrl(), is(URI.create("https://host/onramp/v1/")));
+  }
+
+  @Test
+  public void onrampWithWrongString() throws Exception {
+    try {
+      HttpHandler.onramp(options.withHost("host"), "0");
+      fail("Should throw exception when creating HttpHandler with wrong onramp version");
+    } catch (Exception e) {
+      assertThat(e.getMessage(), is("Unknown version \"0\" was used"));
+    }
   }
 
   @Test

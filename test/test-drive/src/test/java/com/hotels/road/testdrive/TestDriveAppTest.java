@@ -109,7 +109,7 @@ public class TestDriveAppTest {
 
     ObjectNode payload = mapper.createObjectNode().put("id", 0);
     OnrampOptions onOptions = onrampOptions();
-    try (RoadClient<JsonNode> onrampV1 = new SimpleRoadClient<>(onOptions, "v1")) {
+    try (RoadClient<JsonNode> onrampV1 = new SimpleRoadClient<>(onOptions, "1")) {
       StandardResponse response = onrampV1.sendMessage(payload);
       assertThat(response.isSuccess(), is(true));
     }
@@ -127,7 +127,7 @@ public class TestDriveAppTest {
     OnMessage messageV2 = new OnMessage("key1", payload);
     JsonNode messageV2JsonNode = mapper.valueToTree(messageV2);
 
-    try (RoadClient<JsonNode> onrampV2 = new SimpleRoadClient<>(onOptions, "v2")) {
+    try (RoadClient<JsonNode> onrampV2 = new SimpleRoadClient<>(onOptions, "2")) {
       StandardResponse response = onrampV2.sendMessage(messageV2JsonNode);
       assertThat(response.isSuccess(), is(true));
     }
@@ -156,7 +156,7 @@ public class TestDriveAppTest {
 
     JsonNode payload = mapper.createObjectNode().set("id", NullNode.getInstance());
     OnrampOptions onOptions = onrampOptions();
-    try (RoadClient<JsonNode> onramp = new SimpleRoadClient<>(onOptions, "v2")) {
+    try (RoadClient<JsonNode> onramp = new SimpleRoadClient<>(onOptions, "2")) {
       StandardResponse response = onramp.sendMessage(payload);
       assertThat(response.isSuccess(), is(false));
     }

@@ -38,6 +38,8 @@ import org.apache.http.impl.client.IdleConnectionEvictor;
 import lombok.Getter;
 
 import com.hotels.road.client.OnrampOptions;
+import com.hotels.road.onramp.version.OnrampVersion;
+import com.hotels.road.paver.version.PaverVersion;
 
 public class HttpHandler implements AutoCloseable {
   @Getter(PACKAGE)
@@ -87,17 +89,34 @@ public class HttpHandler implements AutoCloseable {
   }
 
   public static HttpHandler paver(OnrampOptions options) {
-    return new HttpHandler(createUri(options.getHost(), "paver", "v1"), options);
+    return paver(options, PaverVersion.PAVER_1);
+  }
+
+  public static HttpHandler paver(OnrampOptions options, String version) {
+    return paver(options, PaverVersion.fromStringStrict(version));
+  }
+
+  public static HttpHandler paver(OnrampOptions options, PaverVersion version) {
+    String versionString = version.toApiVersion();
+    if (versionString != null){
+      return new HttpHandler(createUri(options.getHost(), "paver", versionString), options);
+    }
+    return null;
   }
 
   public static HttpHandler onramp(OnrampOptions options) {
-    return onramp(options, "v1");
+    return onramp(options, OnrampVersion.ONRAMP_1);
   }
 
-  public static HttpHandler onramp(OnrampOptions options, String version) {
-    List<String> supportedVersions = Arrays.asList("v1", "v2");
-    if (supportedVersions.contains(version)){
-      return new HttpHandler(createUri(options.getHost(), "onramp", version), options);
+  public static HttpHandler onramp(OnrampOptions options, String version) throws IllegalArgumentException {
+    return onramp(options, OnrampVersion.fromStringStrict(version));
+  }
+
+  public static HttpHandler onramp(OnrampOptions options, OnrampVersion version) {
+
+    String versionString = version.toApiVersion();
+    if (versionString != null){
+      return new HttpHandler(createUri(options.getHost(), "onramp", versionString), options);
     }
     return null;
   }

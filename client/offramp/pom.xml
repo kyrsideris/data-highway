@@ -37,6 +37,11 @@
       <artifactId>road-user-agent-maven</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.hotels.road</groupId>
+      <artifactId>road-versions</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>

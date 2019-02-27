@@ -33,6 +33,11 @@
     </dependency>
     <dependency>
       <groupId>com.hotels.road</groupId>
+      <artifactId>road-versions</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.hotels.road</groupId>
       <artifactId>road-pii</artifactId>
       <version>${project.version}</version>
     </dependency>

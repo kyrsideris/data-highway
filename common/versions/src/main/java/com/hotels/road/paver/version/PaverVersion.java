@@ -13,27 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.offramp.service;
+package com.hotels.road.paver.version;
 
 import static lombok.AccessLevel.PRIVATE;
 
-import java.util.Objects;
+import com.hotels.road.api.version.ApiVersion;
+import com.hotels.road.api.version.EnumVersion;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(access = PRIVATE)
-public enum OfframpVersion {
-  OFFRAMP_2("2"),
+public enum PaverVersion implements ApiVersion {
+  PAVER_1("1"),
   UNKNOWN(null);
 
   private final String versionString;
 
-  public static OfframpVersion fromString(String versionString) {
-    for (OfframpVersion version : values()) {
-      if (Objects.equals(version.versionString, versionString)) {
-        return version;
-      }
-    }
-    return UNKNOWN;
+  private static final EnumVersion<PaverVersion> versioner =
+      new EnumVersion<>(values(), UNKNOWN);
+
+  public String getVersion() {
+    return versionString;
+  }
+
+  public static PaverVersion fromString(String versionString) {
+    return versioner.fromString(versionString);
+  }
+
+  public static PaverVersion fromStringStrict(String versionString) throws IllegalArgumentException {
+    return versioner.fromStringStrict(versionString);
+  }
+
+  public String toString() {
+    return versioner.toString(this);
+  }
+
+  public String toApiVersion() {
+    return versioner.toApiVersion(this);
   }
 }

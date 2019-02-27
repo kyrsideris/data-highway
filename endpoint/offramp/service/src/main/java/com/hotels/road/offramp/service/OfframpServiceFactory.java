@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import com.hotels.road.offramp.metrics.StreamMetrics;
 import com.hotels.road.offramp.socket.EventSender;
 import com.hotels.road.offramp.spi.RoadConsumer;
+import com.hotels.road.offramp.version.OfframpVersion;
 
 @Component
 @RequiredArgsConstructor
