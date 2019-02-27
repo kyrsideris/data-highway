@@ -34,6 +34,7 @@ import com.hotels.jasvorno.JasvornoConverter;
 import com.hotels.road.model.core.SchemaVersion;
 
 public class AvroJsonEncoder implements Function<JsonNode, byte[]> {
+
   private static final byte MAGIC_BYTE = 0x00;
 
   private final byte[] version;

@@ -15,12 +15,13 @@
  */
 package com.hotels.road.onramp.api;
 
-import lombok.Value;
-
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import lombok.Value;
 
 @Value
 public class OnMessage {
+
   String key;
   ObjectNode message;
 }

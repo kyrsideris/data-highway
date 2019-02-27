@@ -18,5 +18,6 @@ package com.hotels.road.onramp.api;
 import java.util.Optional;
 
 public interface OnrampService {
+
   Optional<Onramp> getOnramp(String name);
 }

@@ -21,6 +21,7 @@ import java.util.concurrent.Future;
 import com.hotels.road.model.core.SchemaVersion;
 
 public interface Onramp {
+
   Future<Boolean> sendOnMessage(OnMessage onMessage, Instant time);
 
   boolean isAvailable();

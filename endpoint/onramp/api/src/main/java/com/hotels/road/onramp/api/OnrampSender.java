@@ -21,6 +21,7 @@ import com.hotels.road.model.core.InnerMessage;
 import com.hotels.road.model.core.Road;
 
 public interface OnrampSender {
+
   int getPartitionCount(Road road);
 
   Future<Boolean> sendInnerMessage(Road road, InnerMessage message);

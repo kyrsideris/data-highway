@@ -22,9 +22,6 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
-import lombok.Getter;
-import lombok.NonNull;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.util.concurrent.Futures;
 
@@ -38,6 +35,9 @@ import com.hotels.road.partition.KeyPathParser;
 import com.hotels.road.partition.PartitionNodeFunction;
 import com.hotels.road.partition.RoadPartitioner;
 import com.hotels.road.rest.model.RoadType;
+
+import lombok.Getter;
+import lombok.NonNull;
 
 public class OnrampImpl implements Onramp {
 
@@ -84,7 +84,6 @@ public class OnrampImpl implements Onramp {
 
     if (RoadType.NORMAL == road.getType() && onMessage.getMessage() == null) {
       return Futures.immediateFailedFuture(new InvalidEventException("Normal road messages must contain a message"));
-
     } else if (RoadType.COMPACT == road.getType() && onMessage.getKey() == null) {
       return Futures.immediateFailedFuture(new InvalidEventException("Compact road messages must specify a key"));
     }
