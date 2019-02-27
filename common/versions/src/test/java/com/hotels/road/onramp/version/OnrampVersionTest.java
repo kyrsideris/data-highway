@@ -15,7 +15,6 @@
  */
 package com.hotels.road.onramp.version;
 
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -24,6 +23,7 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 
 public class OnrampVersionTest {
+
   @Test
   public void countValues() {
     assertThat(OnrampVersion.values().length, is(3));

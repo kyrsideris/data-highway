@@ -16,5 +16,6 @@
 package com.hotels.road.api.version;
 
 public interface ApiVersion {
+
   String getVersion();
 }

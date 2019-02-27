@@ -18,7 +18,7 @@ package com.hotels.road.api.version;
 import java.util.HashMap;
 import java.util.Map;
 
-public class EnumVersion<E extends Enum<E> & ApiVersion>{
+public class EnumVersion<E extends Enum<E> & ApiVersion> {
 
   private Map<String, E> lookup;
   private E unknown;
@@ -29,10 +29,9 @@ public class EnumVersion<E extends Enum<E> & ApiVersion>{
       this.lookup.put(e.getVersion(), e);
     }
     this.unknown = unknown;
-
   }
 
-  public E fromString(String versionString){
+  public E fromString(String versionString) {
     return lookup.getOrDefault(versionString, unknown);
   }
 
@@ -52,7 +51,7 @@ public class EnumVersion<E extends Enum<E> & ApiVersion>{
   }
 
   public String toApiVersion(E e) {
-    if (e == null || e.getVersion() == null || e.getVersion().equals(unknown)){
+    if (e == null || e.getVersion() == null || e.getVersion().equals(unknown)) {
       return null;
     }
     return "v" + e.getVersion();

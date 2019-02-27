@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 
 public class PaverVersionTest {
+
   @Test
   public void countValues() {
     assertThat(PaverVersion.values().length, is(2));

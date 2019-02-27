@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 
 public class OfframpVersionTest {
+
   @Test
   public void countValues() {
     assertThat(OfframpVersion.values().length, is(2));
