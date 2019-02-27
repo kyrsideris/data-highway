@@ -39,8 +39,6 @@ import java.util.stream.Collectors;
 import org.apache.avro.Schema;
 import org.springframework.stereotype.Component;
 
-import lombok.RequiredArgsConstructor;
-
 import com.hotels.jasvorno.schema.SchemaValidationException;
 import com.hotels.road.exception.InvalidSchemaException;
 import com.hotels.road.exception.InvalidSchemaVersionException;
@@ -54,13 +52,30 @@ import com.hotels.road.schema.chronology.SchemaCompatibilityException;
 import com.hotels.road.schema.gdpr.PiiSchemaEvolutionValidator;
 import com.hotels.road.schema.validation.DataHighwaySchemaValidator;
 
+import lombok.RequiredArgsConstructor;
+
 @Component
 @RequiredArgsConstructor
 class MemorySchemaStoreClient implements SchemaStoreClient {
+
   private static final Comparator<SchemaVersion> VERSION_COMPARATOR = (s1, s2) -> schemaVersion(s1) - schemaVersion(s2);
   private static final Predicate<SchemaVersion> NOT_DELETED = s -> !s.isDeleted();
 
   private final Map<String, Road> store;
+
+  private static void checkNotBlank(String value, String attribute) {
+    checkArgument(isNotBlank(value), format("Road %s must not be blank.", attribute));
+  }
+
+  private static <T> BinaryOperator<T> duplicateVersionChecker() {
+    return (u, v) -> {
+      throw new IllegalStateException(String.format("Duplicate key %s", u));
+    };
+  }
+
+  private static int schemaVersion(SchemaVersion schemaVersion) {
+    return Optional.ofNullable(schemaVersion).map(SchemaVersion::getVersion).orElse(0);
+  }
 
   @Override
   public Optional<SchemaVersion> getSchema(String name, int version) throws ServiceException, UnknownRoadException {
@@ -71,7 +86,7 @@ class MemorySchemaStoreClient implements SchemaStoreClient {
 
   @Override
   public Optional<SchemaVersion> getActiveSchema(String name, int version)
-    throws ServiceException, UnknownRoadException {
+      throws ServiceException, UnknownRoadException {
     return getSchema(name, version).filter(NOT_DELETED);
   }
 
@@ -87,18 +102,18 @@ class MemorySchemaStoreClient implements SchemaStoreClient {
 
   @Override
   public SchemaVersion registerSchema(String name, Schema schema)
-    throws InvalidSchemaException, ServiceException, UnknownRoadException {
+      throws ServiceException, UnknownRoadException {
     return registerSchema(name, schema, OptionalInt.empty());
   }
 
   @Override
   public SchemaVersion registerSchema(String name, Schema schema, int version)
-    throws InvalidSchemaException, ServiceException, UnknownRoadException, InvalidSchemaVersionException {
+      throws ServiceException, UnknownRoadException {
     return registerSchema(name, schema, OptionalInt.of(version));
   }
 
   private SchemaVersion registerSchema(String name, Schema schema, OptionalInt optionalVersion)
-    throws InvalidSchemaException, ServiceException, UnknownRoadException, InvalidSchemaVersionException {
+      throws ServiceException, UnknownRoadException {
     checkNotBlank(name, "name");
 
     try {
@@ -141,20 +156,16 @@ class MemorySchemaStoreClient implements SchemaStoreClient {
 
   @Override
   public Map<Integer, SchemaVersion> getAllSchemaVersions(String name)
-    throws ServiceException, IllegalArgumentException, UnknownRoadException {
+      throws ServiceException, IllegalArgumentException, UnknownRoadException {
     checkNotBlank(name, "name");
     return Collections.unmodifiableMap(getRoadSchemas(name));
   }
 
   @Override
   public Map<Integer, SchemaVersion> getActiveSchemaVersions(String name)
-    throws ServiceException, IllegalArgumentException, UnknownRoadException {
+      throws ServiceException, IllegalArgumentException, UnknownRoadException {
     return getRoadSchemas(name).entrySet().stream().filter(s -> NOT_DELETED.test(s.getValue())).collect(
         Collectors.toMap(Entry::getKey, Entry::getValue));
-  }
-
-  private static void checkNotBlank(String value, String attribute) {
-    checkArgument(isNotBlank(value), format("Road %s must not be blank.", attribute));
   }
 
   @Override
@@ -169,15 +180,5 @@ class MemorySchemaStoreClient implements SchemaStoreClient {
 
   private Road getRoad(String name) throws UnknownRoadException {
     return Optional.ofNullable(store.get(name)).orElseThrow(() -> new UnknownRoadException(name));
-  }
-
-  private static <T> BinaryOperator<T> duplicateVersionChecker() {
-    return (u, v) -> {
-      throw new IllegalStateException(String.format("Duplicate key %s", u));
-    };
-  }
-
-  private static int schemaVersion(SchemaVersion schemaVersion) {
-    return Optional.ofNullable(schemaVersion).map(SchemaVersion::getVersion).orElse(0);
   }
 }

@@ -28,8 +28,6 @@ import java.util.SortedSet;
 
 import org.springframework.stereotype.Component;
 
-import lombok.RequiredArgsConstructor;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatch;
@@ -44,12 +42,19 @@ import com.hotels.road.model.core.Road;
 import com.hotels.road.paver.api.RoadAdminClient;
 import com.hotels.road.tollbooth.client.api.PatchSet;
 
+import lombok.RequiredArgsConstructor;
+
 @Component
 @RequiredArgsConstructor
 class MemoryRoadAdminClient implements RoadAdminClient {
+
   private static final String ROAD_ALREADY_EXISTS = "Road %s already exists.";
   private final Map<String, Road> store;
   private final ObjectMapper mapper;
+
+  private static void checkNotBlank(String value, String attribute) {
+    checkArgument(isNotBlank(value), format("Road %s must not be blank.", attribute));
+  }
 
   @Override
   public SortedSet<String> listRoads() {
@@ -92,9 +97,5 @@ class MemoryRoadAdminClient implements RoadAdminClient {
     } catch (IOException | JsonPatchException e) {
       throw new ServiceException(e);
     }
-  }
-
-  private static void checkNotBlank(String value, String attribute) {
-    checkArgument(isNotBlank(value), format("Road %s must not be blank.", attribute));
   }
 }

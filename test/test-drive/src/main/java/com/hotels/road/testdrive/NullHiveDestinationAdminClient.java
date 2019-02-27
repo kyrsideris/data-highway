@@ -27,6 +27,7 @@ import com.hotels.road.paver.api.HiveDestinationAdminClient;
 
 @Component
 class NullHiveDestinationAdminClient implements HiveDestinationAdminClient {
+
   @Override
   public Optional<HiveDestination> getHiveDestination(String name) throws UnknownRoadException {
     return Optional.empty();
@@ -34,13 +35,13 @@ class NullHiveDestinationAdminClient implements HiveDestinationAdminClient {
 
   @Override
   public void createHiveDestination(String name, HiveDestination hiveDestination)
-    throws UnknownRoadException, AlreadyExistsException {}
+      throws UnknownRoadException, AlreadyExistsException {}
 
   @Override
   public void updateHiveDestination(String name, HiveDestination hiveDestination)
-    throws UnknownRoadException, UnknownDestinationException {}
+      throws UnknownRoadException, UnknownDestinationException {}
 
   @Override
   public void deleteHiveDestination(String name)
-    throws UnknownRoadException, UnknownDestinationException {}
+      throws UnknownRoadException, UnknownDestinationException {}
 }

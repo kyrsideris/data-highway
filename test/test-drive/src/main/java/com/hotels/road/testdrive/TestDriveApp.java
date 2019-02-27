@@ -28,21 +28,31 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.User;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import lombok.extern.slf4j.Slf4j;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
-
 import com.hotels.road.model.core.Road;
 import com.hotels.road.offramp.api.Record;
 import com.hotels.road.security.RoadWebSecurityConfigurerAdapter;
 import com.hotels.road.testdrive.MemoryRoadPersistence.StreamKey;
+
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import lombok.extern.slf4j.Slf4j;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @Slf4j
 @EnableSwagger2
 @SpringBootApplication(scanBasePackages = "com.hotels.road")
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class TestDriveApp {
+
+  public static void main(String[] args) throws Exception {
+    try {
+      SpringApplication.run(TestDriveApp.class, args);
+    } catch (Exception e) {
+      log.error("Application failed.", e);
+      System.exit(1);
+    }
+  }
+
   @Bean
   Map<String, Road> store() {
     return new HashMap<>();
@@ -73,14 +83,5 @@ public class TestDriveApp {
             User.withDefaultPasswordEncoder().username("user").password("pass").authorities("ROLE_USER"));
       }
     };
-  }
-
-  public static void main(String[] args) throws Exception {
-    try {
-      SpringApplication.run(TestDriveApp.class, args);
-    } catch (Exception e) {
-      log.error("Application failed.", e);
-      System.exit(1);
-    }
   }
 }

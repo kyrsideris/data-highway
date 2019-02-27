@@ -29,9 +29,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-
 import com.fasterxml.jackson.databind.JsonNode;
 
 import com.hotels.road.model.core.Road;
@@ -39,10 +36,14 @@ import com.hotels.road.offramp.api.Payload;
 import com.hotels.road.offramp.api.Record;
 import com.hotels.road.testdrive.MemoryRoadPersistence.StreamKey;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+
 @Api(tags = "testdrive")
 @RestController
 @RequestMapping("/testdrive")
 class TestDriveController {
+
   private final Map<String, Road> store;
   private final @Value("#{messages}") Map<String, List<Record>> messages;
   private final Map<StreamKey, AtomicInteger> commits;

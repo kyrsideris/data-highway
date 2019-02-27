@@ -23,13 +23,13 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
-
 import com.hotels.road.offramp.api.Record;
 import com.hotels.road.offramp.api.UnknownRoadException;
 import com.hotels.road.offramp.model.DefaultOffset;
 import com.hotels.road.offramp.spi.RoadConsumer;
+
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @AllArgsConstructor
 class MemoryRoadConsumer implements RoadConsumer {
@@ -69,19 +69,19 @@ class MemoryRoadConsumer implements RoadConsumer {
   @Component
   @RequiredArgsConstructor
   static class Factory implements RoadConsumer.Factory {
+
     private final MemoryRoadPersistence memoryRoadPersistence;
     private final Map<String, List<Record>> messages;
 
     @Override
     public RoadConsumer create(String roadName, String streamName, DefaultOffset defaultOffset)
-      throws UnknownRoadException {
+        throws UnknownRoadException {
 
       if (!messages.containsKey(roadName)) {
         throw new UnknownRoadException("Unknown road: " + roadName);
       }
 
       return new MemoryRoadConsumer(memoryRoadPersistence, roadName, streamName, defaultOffset);
-
     }
   }
 }

@@ -47,14 +47,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MemoryRoadPersistence {
 
+  private static final Function<byte[], String> keyDeserializer = key -> key == null ? null : new String(key, UTF_8);
+  private static final Deserializer<Payload<byte[]>> valueDeserializer = new PayloadDeserializer();
   private final Map<String, List<Record>> messages;
   private final Map<StreamKey, AtomicInteger> commits;
   private final SchemaProvider schemaProvider;
-
   private final AvroPayloadDecoder payloadDecoder = new AvroPayloadDecoder();
-
-  private static final Function<byte[], String> keyDeserializer = key -> key == null ? null : new String(key, UTF_8);
-  private static final Deserializer<Payload<byte[]>> valueDeserializer = new PayloadDeserializer();
 
   public void write(String roadName, Integer partition, Long timestamp, byte[] binKey, byte[] binValue) {
 

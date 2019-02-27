@@ -31,14 +31,13 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(access = PRIVATE)
 public final class HttpsURLConnectionTrust {
+
   private static HostnameVerifier defaultHostnameVerifier;
   private static SSLSocketFactory defaultSSLSocketFactory;
-
   static {
     defaultHostnameVerifier = getDefaultHostnameVerifier();
     defaultSSLSocketFactory = getDefaultSSLSocketFactory();
   }
-
   public static void trustAll() {
     setDefaultHostnameVerifier((hostname, session) -> true);
     setDefaultSSLSocketFactory((SSLSocketFactory) getDefault());

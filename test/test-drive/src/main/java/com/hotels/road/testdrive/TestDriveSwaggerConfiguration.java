@@ -27,6 +27,7 @@ import springfox.documentation.spring.web.plugins.Docket;
 
 @Configuration
 public class TestDriveSwaggerConfiguration {
+
   @Bean
   public Docket testdriveSwagger() {
     return new Docket(SWAGGER_2)

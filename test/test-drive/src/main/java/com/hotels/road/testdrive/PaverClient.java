@@ -44,6 +44,7 @@ import com.hotels.road.rest.model.StandardResponse;
 import com.hotels.road.schema.serde.SchemaSerializationModule;
 
 public class PaverClient {
+
   private final RestTemplate rest = restTemplate();
   private final UriTemplateHandler handler;
   private final String creds;
@@ -51,6 +52,19 @@ public class PaverClient {
   public PaverClient(String host, String user, String pass) {
     handler = new DefaultUriBuilderFactory("https://" + host + "/paver/v1");
     creds = "Basic " + Base64.getEncoder().encodeToString((user + ":" + pass).getBytes(UTF_8));
+  }
+
+  private static RestTemplate restTemplate() {
+    RestTemplate restTemplate = new RestTemplate();
+    MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+    ObjectMapper mapper = new ObjectMapper().registerModule(new SchemaSerializationModule());
+    converter.setObjectMapper(mapper);
+    restTemplate.getMessageConverters().add(0, converter);
+    restTemplate.setErrorHandler(new DefaultResponseErrorHandler() {
+      @Override
+      public void handleError(ClientHttpResponse response) throws IOException {}
+    });
+    return restTemplate;
   }
 
   public List<String> getRoads() {
@@ -82,18 +96,5 @@ public class PaverClient {
     URI uri = handler.expand("/roads/{roadName}/schemas/latest", roadName);
     RequestEntity<Void> request = get(uri).build();
     return rest.exchange(request, Schema.class).getBody();
-  }
-
-  private static RestTemplate restTemplate() {
-    RestTemplate restTemplate = new RestTemplate();
-    MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-    ObjectMapper mapper = new ObjectMapper().registerModule(new SchemaSerializationModule());
-    converter.setObjectMapper(mapper);
-    restTemplate.getMessageConverters().add(0, converter);
-    restTemplate.setErrorHandler(new DefaultResponseErrorHandler() {
-      @Override
-      public void handleError(ClientHttpResponse response) throws IOException {}
-    });
-    return restTemplate;
   }
 }
