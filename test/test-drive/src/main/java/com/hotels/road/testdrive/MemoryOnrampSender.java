@@ -15,8 +15,6 @@
  */
 package com.hotels.road.testdrive;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.concurrent.Future;
 
 import org.springframework.stereotype.Component;
@@ -25,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 
 import com.google.common.util.concurrent.Futures;
 
+import com.hotels.road.exception.InvalidEventException;
 import com.hotels.road.model.core.Road;
 import com.hotels.road.onramp.api.OnrampSender;
 import com.hotels.road.model.core.InnerMessage;
@@ -32,11 +31,14 @@ import com.hotels.road.model.core.InnerMessage;
 @Component
 @RequiredArgsConstructor
 public class MemoryOnrampSender implements OnrampSender {
+
   private final MemoryRoadPersistence memoryRoadPersistence;
 
   @Override
   public Future<Boolean> sendInnerMessage(Road road, InnerMessage message) {
-    checkArgument(message.getPartition() == 0);
+    if (message.getPartition() != 0) {
+      return Futures.immediateFailedFuture(new InvalidEventException("Partition should be 0"));
+    }
     memoryRoadPersistence.write(road.getName(), // normally we use road.getTopicName(), for test purpose only getName.
         message.getPartition(),
         message.getTimestampMs(),
