@@ -36,18 +36,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class RoadPartitionerTest {
 
-  long seed = Instant.now().toEpochMilli();
-  private Random random = new Random(seed);
-
-  private int partitions = 25;
-  private RoadPartitioner partitioner = new RoadPartitioner(partitions, random);
-
+  private final long seed = Instant.now().toEpochMilli();
+  private final Random random = new Random(seed);
+  private final int partitions = 25;
+  private final RoadPartitioner partitioner = new RoadPartitioner(partitions, random);
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
   public void partitionWithKey() {
     testRunner(
-        1000,
+        3000,
         0.1f,
         2048,
         funFromKeyToPartition()
@@ -57,7 +55,7 @@ public class RoadPartitionerTest {
   @Test
   public void partitionWithPartitionValue() {
     testRunner(
-        1000,
+        3000,
         0.1f,
         2048,
         funcFromMessageToPartition()
@@ -67,7 +65,7 @@ public class RoadPartitionerTest {
   @Test
   public void partitionRandomly() {
     testRunner(
-        1000,
+        3000,
         0.1f,
         2048,
         fromRandomToPartition()
@@ -99,7 +97,7 @@ public class RoadPartitionerTest {
       int samplesPerPartition,
       float errorMargin,
       int maxMsgSize,
-      IntFunction<Integer> undertest){
+      IntFunction<Integer> undertest) {
 
     int sampleSize = partitions * samplesPerPartition;
 
