@@ -127,12 +127,11 @@ public class OnrampController {
         .collect(Collectors.toList());
   }
 
-  private Future<Boolean> filterUndeserialised(Onramp onramp, Instant time, OnMessageWrapper dm) {
-    if (dm.getSuccess()) {
-      return onramp.sendOnMessage(dm.getMessage(), time);
-    } else {
-      return Futures.immediateFailedFuture(new DeserialisationException(dm.getReason()));
+  private Future<Boolean> filterUndeserialised(Onramp onramp, Instant time, OnMessageWrapper wrap) {
+    if (wrap.isSuccess()) {
+      return onramp.sendOnMessage(wrap.getMessage(), time);
     }
+    return Futures.immediateFailedFuture(new DeserialisationException(wrap.getReason()));
   }
 
   private StandardResponse translateFuture(Future<Boolean> future) throws ServiceException {
