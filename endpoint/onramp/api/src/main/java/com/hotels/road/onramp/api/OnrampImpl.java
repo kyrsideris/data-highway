@@ -61,7 +61,7 @@ public class OnrampImpl implements Onramp {
     keyEncoder = key -> key == null ? null : key.getBytes(UTF_8);
     valueEncoder = SchemaVersion.latest(road.getSchemas().values())
         .map(schema -> (Function<JsonNode, byte[]>) new AvroJsonEncoder(schema))
-        .orElse(this::noSchemaEncode);
+        .orElseThrow(() -> new IllegalArgumentException());
 
     partitionNodeFunction = Optional
         .ofNullable(road.getPartitionPath())
@@ -69,14 +69,6 @@ public class OnrampImpl implements Onramp {
         .map(KeyPathParser::parse)
         .<Function<JsonNode, JsonNode>> map(PartitionNodeFunction::new)
         .orElse((JsonNode a) -> null);
-  }
-
-  private byte[] noSchemaEncode(JsonNode json) {
-    if (json == null) {
-      return null;
-    } else {
-      throw new IllegalArgumentException();
-    }
   }
 
   @Override
@@ -130,4 +122,5 @@ public class OnrampImpl implements Onramp {
         .latest(road.getSchemas().values())
         .orElseThrow(() -> new RoadUnavailableException(String.format("Road '%s' has no schema.", road.getName())));
   }
+
 }
