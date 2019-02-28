@@ -19,7 +19,7 @@ package com.hotels.road.onramp.api;
 import lombok.Value;
 
 @Value
-public class DeserialisedOnMessage {
+public class AssessedOnMessage {
   Boolean success;
   String reason;
   OnMessage message;
