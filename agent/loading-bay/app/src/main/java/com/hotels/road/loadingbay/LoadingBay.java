@@ -34,7 +34,6 @@ import com.hotels.road.agents.trafficcop.spi.Agent;
 import com.hotels.road.loadingbay.model.Destinations;
 import com.hotels.road.loadingbay.model.Hive;
 import com.hotels.road.loadingbay.model.HiveRoad;
-import com.hotels.road.loadingbay.model.HiveStatus;
 import com.hotels.road.rest.model.RoadType;
 import com.hotels.road.tollbooth.client.api.PatchOperation;
 
@@ -45,16 +44,15 @@ import lombok.extern.slf4j.Slf4j;
 public class LoadingBay implements Agent<HiveRoad> {
 
   static final OffsetDateTime EPOCH = OffsetDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC);
+
   private final HiveTableAction hiveTableAction;
   private final Function<HiveRoad, LanderMonitor> monitorFactory;
-  private final Map<String, LanderMonitor> monitors;
+  private final Map<String, LanderMonitor> monitors = new HashMap<>();
 
   @Autowired
   public LoadingBay(HiveTableAction hiveTableAction, Function<HiveRoad, LanderMonitor> monitorFactory) {
     this.hiveTableAction = hiveTableAction;
     this.monitorFactory = monitorFactory;
-
-    monitors = new HashMap<>();
   }
 
   @Override
@@ -74,37 +72,48 @@ public class LoadingBay implements Agent<HiveRoad> {
 
   @Override
   public List<PatchOperation> inspectModel(String key, HiveRoad model) {
-    if (model.getType() == RoadType.COMPACT) {
-      log.error("Compacted roads are not allowed in Loading Bay.");
+    if (!isSupportedRoadType(model)) {
       return emptyList();
     }
     Optional<Hive> hive = Optional.ofNullable(model.getDestinations()).map(Destinations::getHive);
-    if (hive.isPresent()) {
-      OffsetDateTime lastRun = hive.map(Hive::getStatus).map(HiveStatus::getLastRun).orElse(EPOCH);
-      log.debug("Inspecting road {}. Lander last ran at {}", model.getName(), lastRun);
-      try {
-        List<PatchOperation> patches = hiveTableAction.checkAndApply(model);
-        LanderMonitor monitor = monitors.computeIfAbsent(model.getName(), n -> monitorFactory.apply(model));
-        monitor.establishLandingFrequency(hive.map(Hive::getLandingInterval).orElse(Hive.DEFAULT_LANDING_INTERVAL));
-        monitor.setEnabled(hive.get().isEnabled());
-        return patches;
-      } catch (NoActiveSchemaException e) {
-        log.info("No schema defined on road '{}'", model.getName());
-        return emptyList();
-      } catch (Exception e) {
-        log.error("Error while applying actions for road '{}'", model.getName(), e);
-        return emptyList();
-      }
-    } else {
-      log.info("Skipping road {} because it has no Hive destination", model.getName());
-      if (monitors.containsKey(model.getName())) {
-        try {
-          monitors.remove(model.getName()).close();
-        } catch (Exception e) {
-          log.warn("Error shutting down DestinationMonitor for {}", model.getName(), e);
-        }
-      }
+    if (!hive.isPresent()) {
+      removeModelMonitor(model);
       return emptyList();
     }
+    return createPatchOperations(hive.get(), model);
   }
+
+  private boolean isSupportedRoadType(HiveRoad model) {
+    if (model.getType() == null || RoadType.NORMAL.equals(model.getType())) {
+      return true;
+    }
+    log.error(model.getType() + " roads are not allowed in Loading Bay.");
+    return false;
+  }
+
+  private List<PatchOperation> createPatchOperations(Hive hive, HiveRoad model) {
+    try {
+      LanderMonitor monitor = monitors.computeIfAbsent(model.getName(), n -> monitorFactory.apply(model));
+      monitor.establishLandingFrequency(hive.getLandingInterval());
+      monitor.setEnabled(hive.isEnabled());
+      return hiveTableAction.checkAndApply(model);
+    } catch (NoActiveSchemaException e) {
+      log.info("No schema defined on road '{}'", model.getName());
+    } catch (Exception e) {
+      log.error("Error while applying actions for road '{}'", model.getName(), e);
+    }
+    return emptyList();
+  }
+
+  private void removeModelMonitor(HiveRoad model) {
+    String name = model.getName();
+    if (monitors.containsKey(name)) {
+      try {
+        monitors.remove(name).close();
+      } catch (Exception e) {
+        log.warn("Error shutting down DestinationMonitor for {}", name, e);
+      }
+    }
+  }
+
 }
