@@ -36,14 +36,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import com.hotels.road.exception.InvalidEventException;
@@ -55,6 +50,14 @@ import com.hotels.road.onramp.api.Onramp;
 import com.hotels.road.onramp.api.OnrampService;
 import com.hotels.road.rest.model.StandardResponse;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 @Api(tags = "onramp")
 @RestController
 @RequestMapping("/onramp")
@@ -63,10 +66,11 @@ import com.hotels.road.rest.model.StandardResponse;
 public class OnrampController {
 
   private static final String MESSAGE_ACCEPTED = "Message accepted.";
-
   private final OnrampService service;
   private final MeterRegistry registry;
   private final Clock clock;
+  private final ObjectMapper v2Mapper = new ObjectMapper()
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
 
   @ApiOperation(value = "Sends a given array of messages to a road")
   @ApiResponses({
@@ -80,8 +84,9 @@ public class OnrampController {
       throws UnknownRoadException, InterruptedException {
     return sendMessages(
         roadName,
-        StreamSupport.stream(messages.spliterator(), false)
-            .map(message -> new OnMessage(null, message)));
+        StreamSupport
+            .stream(messages.spliterator(), false)
+            .map(this::mapToOnmessageV1));
   }
 
   @ApiOperation(value = "Sends a given array of messages to a road")
@@ -92,11 +97,13 @@ public class OnrampController {
       @ApiResponse(code = 422, message = "Road not enabled.", response = StandardResponse.class) })
   @PreAuthorize("@onrampAuthorisation.isAuthorised(authentication,#roadName)")
   @PostMapping(path = "/v2/roads/{roadName}/messages")
-  public List<StandardResponse> produceV2(@PathVariable String roadName, @RequestBody Iterable<OnMessage> messages)
+  public List<StandardResponse> produceV2(@PathVariable String roadName, @RequestBody Iterable<ObjectNode> messages)
       throws UnknownRoadException, InterruptedException {
     return sendMessages(
         roadName,
-        StreamSupport.stream(messages.spliterator(), false));
+        StreamSupport
+            .stream(messages.spliterator(), false)
+            .map(this::mapToOnmessageV2));
   }
 
   private Onramp getOnramp(String roadName) throws UnknownRoadException {
@@ -129,6 +136,20 @@ public class OnrampController {
       return StandardResponse.failureResponse(cause.getMessage());
     } catch (InterruptedException e) {
       throw new ServiceException(e);
+    }
+  }
+
+  private OnMessage mapToOnmessageV1(ObjectNode obj) {
+    return new OnMessage(null, obj);
+  }
+
+
+  private OnMessage mapToOnmessageV2(ObjectNode obj) throws IllegalArgumentException {
+    try {
+      return v2Mapper.treeToValue(obj, OnMessage.class);
+    } catch (JsonProcessingException e) {
+      log.warn("Failed to map ObjectNode to OnMessage");
+      throw new IllegalArgumentException(e.getMessage());
     }
   }
 

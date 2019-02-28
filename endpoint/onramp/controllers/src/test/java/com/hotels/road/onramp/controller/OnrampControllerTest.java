@@ -160,7 +160,7 @@ public class OnrampControllerTest {
     mockMvc
         .perform(
             post(NON_EXISTENT_ROAD_URI_2)
-                .content("[{\"partition\":null,\"key\":null,\"message\":{}}]")
+                .content("[{\"key\":null,\"message\":{}}]")
                 .contentType(APPLICATION_JSON_UTF8))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.message", is(String.format("Road \"%s\" does not exist.", NON_EXISTENT_ROAD))))
@@ -192,7 +192,6 @@ public class OnrampControllerTest {
             post(PRESENT_ROAD_URI_2)
                 .content(
                     "[{\n"
-                        + "  \"partition\": 1,\n"
                         + "  \"key\": \"effort\",\n"
                         + "  \"message\": {\n"
                         + "    \"valid\": true\n"
@@ -202,6 +201,45 @@ public class OnrampControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].message", is("Message accepted.")))
         .andExpect(jsonPath("$[0].success", is(true)));
+  }
+
+  @Test
+  public void eventPostedUnSuccessfully2() throws Exception {
+    given(onrampService.getOnramp(PRESENT_ROAD)).willReturn(Optional.of(onramp));
+
+    mockMvc
+        .perform(
+            post(PRESENT_ROAD_URI_2)
+                .content(
+                    "[{\n"
+                        + "  \"partition\": 1,\n"
+                        + "  \"key\": \"effort\",\n"
+                        + "  \"message\": {\n"
+                        + "    \"valid\": true\n"
+                        + "  }\n"
+                        + "}]")
+                .contentType(APPLICATION_JSON_UTF8))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message", startsWith("Unrecognized field \"partition\"")))
+        .andExpect(jsonPath("$.success", is(false)));
+  }
+
+  @Test
+  public void eventPostedSecondUnSuccessfully2() throws Exception {
+    given(onrampService.getOnramp(PRESENT_ROAD)).willReturn(Optional.of(onramp));
+
+    mockMvc
+        .perform(
+            post(PRESENT_ROAD_URI_2)
+                .content(
+                    "[{ \"key\": \"effortless\", \"message\": { \"valid\": true } },"
+                        + "{ \"key\": \"effort\", \"message\": { \"valid\": false }, \"partition\": 1 }]")
+                .contentType(APPLICATION_JSON_UTF8))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$[0].message", is("Message accepted.")))
+        .andExpect(jsonPath("$[0].success", is(true)))
+        .andExpect(jsonPath("$[1].message", startsWith("Unrecognized field \"partition\"")))
+        .andExpect(jsonPath("$[1].success", is(false)));
   }
 
   @Test
@@ -234,7 +272,7 @@ public class OnrampControllerTest {
     mockMvc
         .perform(
             post(CLOSED_ROAD_URI_2)
-                .content("[{\"partition\": 1, \"key\": \"effort\", \"message\": {\"valid\": true}}]")
+                .content("[{\"key\": \"effort\", \"message\": {\"valid\": true}}]")
                 .contentType(APPLICATION_JSON_UTF8))
         .andExpect(status().isUnprocessableEntity())
         .andExpect(jsonPath("$.message", is("Road 'closed_road' is disabled, could not send events.")))
@@ -248,7 +286,7 @@ public class OnrampControllerTest {
     mockMvc
         .perform(post(PRESENT_ROAD_URI).content("[{\"valid\":false}]").contentType(APPLICATION_JSON_UTF8))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].message", is("The event failed validation. Invalid OnMessage")))
+        .andExpect(jsonPath("$[0].message", is("The event failed validation. Invalid message")))
         .andExpect(jsonPath("$[0].success", is(false)));
   }
 
@@ -274,7 +312,7 @@ public class OnrampControllerTest {
         .perform(
             post(PRESENT_ROAD_URI).content("[{\"valid\":false},{\"valid\":true}]").contentType(APPLICATION_JSON_UTF8))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].message", is("The event failed validation. Invalid OnMessage")))
+        .andExpect(jsonPath("$[0].message", is("The event failed validation. Invalid message")))
         .andExpect(jsonPath("$[0].success", is(false)))
         .andExpect(jsonPath("$[1].message", is("Message accepted.")))
         .andExpect(jsonPath("$[1].success", is(true)));
