@@ -19,8 +19,8 @@ package com.hotels.road.onramp.api;
 import lombok.Value;
 
 @Value
-public class AssessedOnMessage {
-  Boolean success;
+public class OnMessageWrapper {
+  boolean success;
   String reason;
   OnMessage message;
 }

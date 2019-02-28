@@ -47,7 +47,7 @@ import com.hotels.road.exception.InvalidEventException;
 import com.hotels.road.exception.RoadUnavailableException;
 import com.hotels.road.exception.ServiceException;
 import com.hotels.road.exception.UnknownRoadException;
-import com.hotels.road.onramp.api.AssessedOnMessage;
+import com.hotels.road.onramp.api.OnMessageWrapper;
 import com.hotels.road.onramp.api.OnMessage;
 import com.hotels.road.onramp.api.Onramp;
 import com.hotels.road.onramp.api.OnrampService;
@@ -117,7 +117,7 @@ public class OnrampController {
     return onramp;
   }
 
-  private List<StandardResponse> sendMessages(String roadName, Stream<AssessedOnMessage> messages)
+  private List<StandardResponse> sendMessages(String roadName, Stream<OnMessageWrapper> messages)
       throws ServiceException, UnknownRoadException {
     Onramp onramp = getOnramp(roadName);
     Instant time = clock.instant();
@@ -127,7 +127,7 @@ public class OnrampController {
         .collect(Collectors.toList());
   }
 
-  private Future<Boolean> filterUndeserialised(Onramp onramp, Instant time, AssessedOnMessage dm) {
+  private Future<Boolean> filterUndeserialised(Onramp onramp, Instant time, OnMessageWrapper dm) {
     if (dm.getSuccess()) {
       return onramp.sendOnMessage(dm.getMessage(), time);
     } else {
@@ -153,17 +153,17 @@ public class OnrampController {
     }
   }
 
-  private AssessedOnMessage mapToOnmessageV1(ObjectNode obj) {
-    return new AssessedOnMessage(
+  private OnMessageWrapper mapToOnmessageV1(ObjectNode obj) {
+    return new OnMessageWrapper(
         true,
         "",
         new OnMessage(null, obj));
   }
 
 
-  private AssessedOnMessage mapToOnmessageV2(ObjectNode obj) throws IllegalArgumentException {
+  private OnMessageWrapper mapToOnmessageV2(ObjectNode obj) throws IllegalArgumentException {
     try {
-      return new AssessedOnMessage(
+      return new OnMessageWrapper(
           true,
           "",
           v2Mapper.treeToValue(obj, OnMessage.class)
@@ -171,7 +171,7 @@ public class OnrampController {
 
     } catch (JsonProcessingException e) {
       log.warn("Failed to map ObjectNode to OnMessage");
-      return new AssessedOnMessage(
+      return new OnMessageWrapper(
           false,
           e.getMessage(),
           null
