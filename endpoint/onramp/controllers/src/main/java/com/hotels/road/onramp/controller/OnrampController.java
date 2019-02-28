@@ -40,11 +40,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.util.concurrent.Futures;
 
+import com.hotels.road.exception.DeserialisationException;
 import com.hotels.road.exception.InvalidEventException;
 import com.hotels.road.exception.RoadUnavailableException;
 import com.hotels.road.exception.ServiceException;
 import com.hotels.road.exception.UnknownRoadException;
+import com.hotels.road.onramp.api.DeserialisedOnMessage;
 import com.hotels.road.onramp.api.OnMessage;
 import com.hotels.road.onramp.api.Onramp;
 import com.hotels.road.onramp.api.OnrampService;
@@ -114,14 +117,22 @@ public class OnrampController {
     return onramp;
   }
 
-  private List<StandardResponse> sendMessages(String roadName, Stream<OnMessage> messages)
+  private List<StandardResponse> sendMessages(String roadName, Stream<DeserialisedOnMessage> messages)
       throws ServiceException, UnknownRoadException {
     Onramp onramp = getOnramp(roadName);
     Instant time = clock.instant();
     return messages
-        .map(m -> onramp.sendOnMessage(m, time))
+        .map(dm -> filterUndeserialised(onramp, time, dm))
         .map(this::translateFuture)
         .collect(Collectors.toList());
+  }
+
+  private Future<Boolean> filterUndeserialised(Onramp onramp, Instant time, DeserialisedOnMessage dm) {
+    if (dm.getSuccess()) {
+      return onramp.sendOnMessage(dm.getMessage(), time);
+    } else {
+      return Futures.immediateFailedFuture(new DeserialisationException(dm.getReason()));
+    }
   }
 
   private StandardResponse translateFuture(Future<Boolean> future) throws ServiceException {
@@ -130,7 +141,10 @@ public class OnrampController {
       return StandardResponse.successResponse(MESSAGE_ACCEPTED);
     } catch (ExecutionException e) {
       Throwable cause = e.getCause();
-      if (!(cause instanceof InvalidEventException)) {
+      if (cause instanceof DeserialisationException) {
+        log.warn("Deserialisation problem", e);
+      }
+      else if (!(cause instanceof InvalidEventException)) {
         log.warn("Problem sending event", e);
       }
       return StandardResponse.failureResponse(cause.getMessage());
@@ -139,17 +153,29 @@ public class OnrampController {
     }
   }
 
-  private OnMessage mapToOnmessageV1(ObjectNode obj) {
-    return new OnMessage(null, obj);
+  private DeserialisedOnMessage mapToOnmessageV1(ObjectNode obj) {
+    return new DeserialisedOnMessage(
+        true,
+        "",
+        new OnMessage(null, obj));
   }
 
 
-  private OnMessage mapToOnmessageV2(ObjectNode obj) throws IllegalArgumentException {
+  private DeserialisedOnMessage mapToOnmessageV2(ObjectNode obj) throws IllegalArgumentException {
     try {
-      return v2Mapper.treeToValue(obj, OnMessage.class);
+      return new DeserialisedOnMessage(
+          true,
+          "",
+          v2Mapper.treeToValue(obj, OnMessage.class)
+      );
+
     } catch (JsonProcessingException e) {
       log.warn("Failed to map ObjectNode to OnMessage");
-      throw new IllegalArgumentException(e.getMessage());
+      return new DeserialisedOnMessage(
+          false,
+          e.getMessage(),
+          null
+      );
     }
   }
 

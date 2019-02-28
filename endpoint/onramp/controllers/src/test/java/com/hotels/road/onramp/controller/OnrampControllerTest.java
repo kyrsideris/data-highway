@@ -84,7 +84,7 @@ public class OnrampControllerTest {
     }
   }
 
-  private static final String INVALID_EVENT_DETAIL = "Invalid OnMessage";
+  private static final String INVALID_EVENT_DETAIL = "Invalid message";
   private static final String ERROR_SENT = "An error occured while posting an event";
   private static final String NON_EXISTENT_ROAD = "non_existent_road";
   private static final String PRESENT_ROAD = "present_road";
@@ -219,9 +219,9 @@ public class OnrampControllerTest {
                         + "  }\n"
                         + "}]")
                 .contentType(APPLICATION_JSON_UTF8))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.message", startsWith("Unrecognized field \"partition\"")))
-        .andExpect(jsonPath("$.success", is(false)));
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].message", startsWith("Deserialisation failed. Unrecognized field \"partition\"")))
+        .andExpect(jsonPath("$[0].success", is(false)));
   }
 
   @Test
@@ -233,13 +233,16 @@ public class OnrampControllerTest {
             post(PRESENT_ROAD_URI_2)
                 .content(
                     "[{ \"key\": \"effortless\", \"message\": { \"valid\": true } },"
-                        + "{ \"key\": \"effort\", \"message\": { \"valid\": false }, \"partition\": 1 }]")
+                        + "{ \"key\": \"effort\", \"message\": { \"valid\": false }, \"partition\": 1 },"
+                        + "{ \"key\": \"effortless\", \"message\": { \"valid\": true } }]")
                 .contentType(APPLICATION_JSON_UTF8))
-        .andExpect(status().isBadRequest())
+        .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].message", is("Message accepted.")))
         .andExpect(jsonPath("$[0].success", is(true)))
-        .andExpect(jsonPath("$[1].message", startsWith("Unrecognized field \"partition\"")))
-        .andExpect(jsonPath("$[1].success", is(false)));
+        .andExpect(jsonPath("$[1].message", startsWith("Deserialisation failed. Unrecognized field \"partition\"")))
+        .andExpect(jsonPath("$[1].success", is(false)))
+        .andExpect(jsonPath("$[2].message", is("Message accepted.")))
+        .andExpect(jsonPath("$[2].success", is(true)));
   }
 
   @Test
