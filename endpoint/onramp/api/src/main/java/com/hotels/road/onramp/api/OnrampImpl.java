@@ -93,22 +93,28 @@ public class OnrampImpl implements Onramp {
   }
 
   private int calculatePartition(OnMessage onMessage) {
-
-    if (onMessage.getKey() != null) {
-      return partitioner.partitionWithKey(onMessage.getKey());
+    Integer partition = calculatePartitionFromKey(onMessage);
+    if (partition == null) {
+      partition = calculatePartitionFromPath(onMessage);
     }
-
-    if (road.getPartitionPath() == null || road.getPartitionPath().isEmpty()) {
-      return partitioner.partitionRandomly();
+    if (partition == null) {
+      partition = partitioner.partitionRandomly();
     }
+    return partition;
+  }
 
-    JsonNode partitionValue = partitionNodeFunction.apply(onMessage.getMessage());
+  private Integer calculatePartitionFromKey(OnMessage onMessage) {
+    return onMessage.getKey() == null ? null : partitioner.partitionWithKey(onMessage.getKey());
+  }
 
-    if (partitionValue == null || partitionValue.isMissingNode()) {
-      return partitioner.partitionRandomly();
+  private Integer calculatePartitionFromPath(OnMessage onMessage) {
+    if (road.getPartitionPath() != null && !road.getPartitionPath().isEmpty()) {
+      JsonNode partitionValue = partitionNodeFunction.apply(onMessage.getMessage());
+      if (partitionValue != null && !partitionValue.isMissingNode()) {
+        return partitioner.partitionWithPartitionValue(partitionValue);
+      }
     }
-
-    return partitioner.partitionWithPartitionValue(partitionValue);
+    return null;
   }
 
   @Override
