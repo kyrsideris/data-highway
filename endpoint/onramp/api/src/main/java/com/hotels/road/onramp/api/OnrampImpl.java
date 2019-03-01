@@ -61,7 +61,7 @@ public class OnrampImpl implements Onramp {
     keyEncoder = key -> key == null ? null : key.getBytes(UTF_8);
     valueEncoder = SchemaVersion.latest(road.getSchemas().values())
         .map(schema -> (Function<JsonNode, byte[]>) new AvroJsonEncoder(schema))
-        .orElse(this::noSchemaEncode);
+        .orElseThrow(() -> new IllegalArgumentException());
 
     partitionNodeFunction = Optional
         .ofNullable(road.getPartitionPath())
@@ -69,14 +69,6 @@ public class OnrampImpl implements Onramp {
         .map(KeyPathParser::parse)
         .<Function<JsonNode, JsonNode>> map(PartitionNodeFunction::new)
         .orElse((JsonNode a) -> null);
-  }
-
-  private byte[] noSchemaEncode(JsonNode json) {
-    if (json == null) {
-      return null;
-    } else {
-      throw new IllegalArgumentException();
-    }
   }
 
   @Override
@@ -101,22 +93,28 @@ public class OnrampImpl implements Onramp {
   }
 
   private int calculatePartition(OnMessage onMessage) {
-
-    if (onMessage.getKey() != null) {
-      return partitioner.partitionWithKey(onMessage.getKey());
+    Integer partition = calculatePartitionFromKey(onMessage);
+    if (partition == null) {
+      partition = calculatePartitionFromPath(onMessage);
     }
-
-    if (road.getPartitionPath() == null || road.getPartitionPath().isEmpty()) {
-      return partitioner.partitionRandomly();
+    if (partition == null) {
+      partition = partitioner.partitionRandomly();
     }
+    return partition;
+  }
 
-    JsonNode partitionValue = partitionNodeFunction.apply(onMessage.getValue());
+  private Integer calculatePartitionFromKey(OnMessage onMessage) {
+    return onMessage.getKey() == null ? null : partitioner.partitionWithKey(onMessage.getKey());
+  }
 
-    if (partitionValue == null || partitionValue.isMissingNode()) {
-      return partitioner.partitionRandomly();
+  private Integer calculatePartitionFromPath(OnMessage onMessage) {
+    if (road.getPartitionPath() != null && !road.getPartitionPath().isEmpty()) {
+      JsonNode partitionValue = partitionNodeFunction.apply(onMessage.getValue());
+      if (partitionValue != null && !partitionValue.isMissingNode()) {
+        return partitioner.partitionWithPartitionValue(partitionValue);
+      }
     }
-
-    return partitioner.partitionWithPartitionValue(partitionValue);
+    return null;
   }
 
   @Override
@@ -130,4 +128,5 @@ public class OnrampImpl implements Onramp {
         .latest(road.getSchemas().values())
         .orElseThrow(() -> new RoadUnavailableException(String.format("Road '%s' has no schema.", road.getName())));
   }
+
 }
