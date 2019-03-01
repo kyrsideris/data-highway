@@ -82,7 +82,7 @@ public class OnrampImpl implements Onramp {
   @Override
   public Future<Boolean> sendOnMessage(OnMessage onMessage, Instant time) {
 
-    if (RoadType.NORMAL == road.getType() && onMessage.getMessage() == null) {
+    if (RoadType.NORMAL == road.getType() && onMessage.getValue() == null) {
       return Futures.immediateFailedFuture(new InvalidEventException("Normal road messages must contain a message"));
     } else if (RoadType.COMPACT == road.getType() && onMessage.getKey() == null) {
       return Futures.immediateFailedFuture(new InvalidEventException("Compact road messages must specify a key"));
@@ -91,7 +91,7 @@ public class OnrampImpl implements Onramp {
     try {
       int partition = calculatePartition(onMessage);
       byte[] key = keyEncoder.apply(onMessage.getKey());
-      byte[] message = valueEncoder.apply(onMessage.getMessage());
+      byte[] message = valueEncoder.apply(onMessage.getValue());
       InnerMessage innerMessage = new InnerMessage(partition, time.toEpochMilli(), key, message);
 
       return sender.sendInnerMessage(road, innerMessage);
@@ -110,7 +110,7 @@ public class OnrampImpl implements Onramp {
       return partitioner.partitionRandomly();
     }
 
-    JsonNode partitionValue = partitionNodeFunction.apply(onMessage.getMessage());
+    JsonNode partitionValue = partitionNodeFunction.apply(onMessage.getValue());
 
     if (partitionValue == null || partitionValue.isMissingNode()) {
       return partitioner.partitionRandomly();

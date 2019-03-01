@@ -21,7 +21,12 @@ import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,27 +44,32 @@ public class RoadClientTest {
   private final StandardResponse response1 = new StandardResponse(1, true, null);
   private final StandardResponse response2 = new StandardResponse(2, true, null);
   private final StandardResponse response3 = new StandardResponse(3, true, null);
+  private final List<StandardResponse> responses = Arrays.asList(response1, response2, response3);
 
   @Test
   public void defaultMethod() {
     @SuppressWarnings("unchecked")
     RoadClient<Integer> underTest = mock(RoadClient.class, CALLS_REAL_METHODS);
+    List<Integer> messages = ImmutableList.of(1, 2, 3);
+    List<OnrampMessage<Integer>> onrampMessages = messages.stream()
+        .map(OnrampMessage::new)
+        .collect(Collectors.toList());
 
-    when(underTest.sendMessage(1)).thenReturn(response1);
-    when(underTest.sendMessage(2)).thenReturn(response2);
-    when(underTest.sendMessage(3)).thenReturn(response3);
+    when(underTest.send(onrampMessages)).thenReturn(responses);
 
-    List<StandardResponse> result = underTest.sendMessages(ImmutableList.of(1, 2, 3));
+    List<StandardResponse> result1 = underTest.sendMessages(messages);
 
-    assertThat(result.size(), is(3));
-    assertThat(result.get(0), is(response1));
-    assertThat(result.get(1), is(response2));
-    assertThat(result.get(2), is(response3));
+    assertThat(result1.size(), is(3));
+    assertThat(result1.get(0), is(response1));
+    assertThat(result1.get(1), is(response2));
+    assertThat(result1.get(2), is(response3));
 
-    InOrder inOrder = Mockito.inOrder(underTest);
-    inOrder.verify(underTest).sendMessage(1);
-    inOrder.verify(underTest).sendMessage(2);
-    inOrder.verify(underTest).sendMessage(3);
+    OnrampMessage<Integer> msg1 = onrampMessages.get(0);
+    when(underTest.send(Collections.singletonList(msg1))).thenReturn(Collections.singletonList(response1));
+
+    StandardResponse result2 = underTest.send(msg1);
+
+    assertThat(result2, is(response1));
   }
 
 }

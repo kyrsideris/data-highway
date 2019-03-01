@@ -60,7 +60,7 @@ public class SimpleRoadClientTest {
 
   @Test
   public void singleMessage() throws Exception {
-    stubFor(post(urlEqualTo("/onramp/v1/roads/" + TEST_ROAD + "/messages")).withBasicAuth("user", "pass").willReturn(
+    stubFor(post(urlEqualTo("/onramp/v2/roads/" + TEST_ROAD + "/messages")).withBasicAuth("user", "pass").willReturn(
         aResponse().withStatus(HttpStatus.SC_OK).withBody(createStubResponse(1, true, "accepted: "))));
     SimpleModel messageModel = new SimpleModel();
     messageModel.setId(1L);
@@ -76,7 +76,7 @@ public class SimpleRoadClientTest {
   @Test
   public void multipleMessages() throws Exception {
     List<SimpleModel> messages = createMessages(3);
-    stubFor(post(urlEqualTo("/onramp/v1/roads/" + TEST_ROAD + "/messages")).withBasicAuth("user", "pass").willReturn(
+    stubFor(post(urlEqualTo("/onramp/v2/roads/" + TEST_ROAD + "/messages")).withBasicAuth("user", "pass").willReturn(
         aResponse().withStatus(HttpStatus.SC_OK).withBody(createStubResponse(3, true, "accepted: "))));
 
     List<StandardResponse> responses = underTest.sendMessages(messages);
@@ -96,7 +96,7 @@ public class SimpleRoadClientTest {
 
   @Test(expected = OnrampException.class)
   public void internalServerError() throws Exception {
-    stubFor(post(urlEqualTo("/onramp/v1/roads/" + TEST_ROAD + "/messages")).willReturn(
+    stubFor(post(urlEqualTo("/onramp/v2/roads/" + TEST_ROAD + "/messages")).willReturn(
         aResponse().withStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR).withBody(INTERNAL_SERVER_ERROR_MESSAGE)));
     SimpleModel messageModel = new SimpleModel();
     messageModel.setId(1L);
@@ -106,7 +106,7 @@ public class SimpleRoadClientTest {
 
   @Test(expected = OnrampEncodingException.class)
   public void responseParseError() throws Exception {
-    stubFor(post(urlEqualTo("/onramp/v1/roads/" + TEST_ROAD + "/messages"))
+    stubFor(post(urlEqualTo("/onramp/v2/roads/" + TEST_ROAD + "/messages"))
         .willReturn(aResponse().withStatus(HttpStatus.SC_OK).withBody(INVALID_JSON)));
     SimpleModel messageModel = new SimpleModel();
     messageModel.setId(1L);
@@ -116,7 +116,7 @@ public class SimpleRoadClientTest {
 
   @Test(expected = OnrampException.class)
   public void ioError() throws Exception {
-    stubFor(post(urlEqualTo("/onramp/v1/roads/" + TEST_ROAD + "/messages"))
+    stubFor(post(urlEqualTo("/onramp/v2/roads/" + TEST_ROAD + "/messages"))
         .willReturn(aResponse().withFault(Fault.RANDOM_DATA_THEN_CLOSE)));
     SimpleModel messageModel = new SimpleModel();
     messageModel.setId(1L);
@@ -126,7 +126,7 @@ public class SimpleRoadClientTest {
 
   @Test
   public void badRequest() throws Exception {
-    stubFor(post(urlEqualTo("/onramp/v1/roads/" + TEST_ROAD + "/messages"))
+    stubFor(post(urlEqualTo("/onramp/v2/roads/" + TEST_ROAD + "/messages"))
         .willReturn(aResponse().withStatus(SC_BAD_REQUEST).withBody(createSingleResponse(0, false, "error"))));
     SimpleModel messageModel = new SimpleModel();
     messageModel.setId(1L);
@@ -139,7 +139,7 @@ public class SimpleRoadClientTest {
   @Test
   public void badRequestMultiple() throws Exception {
     List<SimpleModel> messages = createMessages(3);
-    stubFor(post(urlEqualTo("/onramp/v1/roads/" + TEST_ROAD + "/messages"))
+    stubFor(post(urlEqualTo("/onramp/v2/roads/" + TEST_ROAD + "/messages"))
         .willReturn(aResponse().withStatus(SC_BAD_REQUEST).withBody(createSingleResponse(0, false, "error"))));
 
     List<StandardResponse> responses = underTest.sendMessages(messages);
@@ -158,7 +158,7 @@ public class SimpleRoadClientTest {
 
   @Test(expected = OnrampException.class)
   public void anotherIOError() throws Exception {
-    stubFor(post(urlEqualTo("/onramp/v1/roads/" + TEST_ROAD + "/messages"))
+    stubFor(post(urlEqualTo("/onramp/v2/roads/" + TEST_ROAD + "/messages"))
         .willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
     SimpleModel messageModel = new SimpleModel();
     messageModel.setId(1L);

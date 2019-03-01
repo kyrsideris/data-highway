@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -41,11 +42,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.CharStreams;
 
+import com.hotels.road.client.OnrampMessage;
 import com.hotels.road.client.RoadClient;
 import com.hotels.road.client.http.HttpHandler;
 import com.hotels.road.client.OnrampOptions;
-import com.hotels.road.onramp.version.OnrampVersion;
-import com.hotels.road.rest.model.Authorisation;
 import com.hotels.road.rest.model.StandardResponse;
 import com.hotels.road.tls.TLSConfig;
 
@@ -112,25 +112,12 @@ public class SimpleRoadClient<T> implements RoadClient<T> {
     this(toOptions(host, username, password, roadName, threads, tlsConfig, objectMapper));
   }
 
-  public SimpleRoadClient(OnrampOptions options, String version) throws IllegalArgumentException{
-    this(options, OnrampVersion.fromStringStrict(version));
-  }
-
-  public SimpleRoadClient(OnrampOptions options, OnrampVersion version) {
-    this(HttpHandler.onramp(options, version), options.getRoadName(), options.getObjectMapper());
-  }
-
   public SimpleRoadClient(OnrampOptions options) {
-    this(options, OnrampVersion.ONRAMP_1);
+    this(HttpHandler.onramp(options), options.getRoadName(), options.getObjectMapper());
   }
 
   @Override
-  public StandardResponse sendMessage(T message) {
-    return sendMessages(singletonList(message)).get(0);
-  }
-
-  @Override
-  public List<StandardResponse> sendMessages(List<T> messages) {
+  public List<StandardResponse> send(List<OnrampMessage<T>> messages) {
     try {
       String json = objectMapper.writeValueAsString(messages);
       HttpEntity entity = EntityBuilder.create().setText(json).setContentType(APPLICATION_JSON).gzipCompress().build();
@@ -155,7 +142,7 @@ public class SimpleRoadClient<T> implements RoadClient<T> {
     }
   }
 
-  private List<StandardResponse> failedBatchResponse(List<T> batch, StandardResponse response) {
+  private List<StandardResponse> failedBatchResponse(List<OnrampMessage<T>> batch, StandardResponse response) {
     return batch.stream().map(m -> response).collect(toList());
   }
 

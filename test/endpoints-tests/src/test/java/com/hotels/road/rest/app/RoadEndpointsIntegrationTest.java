@@ -373,16 +373,16 @@ public class RoadEndpointsIntegrationTest {
     createRoadWithSchema(roadName, true, new SchemaVersion(schema1, 1, false));
     kafkaCluster.createTopic(TOPIC_PREFIX + roadName, 1, 1);
 
-    ResponseEntity<StandardResponse[]> result = rest.exchange(post(uri("/onramp/v1/roads/post_road/messages"))
+    ResponseEntity<StandardResponse[]> result = rest.exchange(post(uri("/onramp/v2/roads/post_road/messages"))
         .header(AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString("user:pass".getBytes(UTF_8)))
         .contentType(APPLICATION_JSON_UTF8)
-        .body("[{\"field\":true}]"), StandardResponse[].class);
+        .body("[{\"key\":null,\"value\":{\"field\":true}}]"), StandardResponse[].class);
 
     assertThat(result.getStatusCode(), is(HttpStatus.OK));
     StandardResponse[] body = result.getBody();
     assertThat(body.length, is(1));
-    assertThat(body[0].isSuccess(), is(true));
     assertThat(body[0].getMessage(), is("Message accepted."));
+    assertThat(body[0].isSuccess(), is(true));
 
   }
 
@@ -394,11 +394,11 @@ public class RoadEndpointsIntegrationTest {
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try (OutputStream gzip = new GZIPOutputStream(baos)) {
-      gzip.write("[{\"field\":true}]".getBytes(UTF_8));
+      gzip.write("[{\"key\":null,\"value\":{\"field\":true}}]".getBytes(UTF_8));
     }
     byte[] bytes = baos.toByteArray();
 
-    ResponseEntity<StandardResponse[]> result = rest.exchange(post(uri("/onramp/v1/roads/gzipRoad/messages"))
+    ResponseEntity<StandardResponse[]> result = rest.exchange(post(uri("/onramp/v2/roads/gzipRoad/messages"))
         .header(CONTENT_ENCODING, "gzip")
         .header(AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString("user:pass".getBytes(UTF_8)))
         .contentType(APPLICATION_JSON_UTF8)
@@ -407,8 +407,8 @@ public class RoadEndpointsIntegrationTest {
     assertThat(result.getStatusCode(), is(HttpStatus.OK));
     StandardResponse[] body = result.getBody();
     assertThat(body.length, is(1));
-    assertThat(body[0].isSuccess(), is(true));
     assertThat(body[0].getMessage(), is("Message accepted."));
+    assertThat(body[0].isSuccess(), is(true));
   }
 
   @Test
@@ -417,16 +417,16 @@ public class RoadEndpointsIntegrationTest {
     createRoadWithSchema(roadName, true, new SchemaVersion(schema1, 1, false));
     kafkaCluster.createTopic(TOPIC_PREFIX + roadName, 1, 1);
 
-    ResponseEntity<StandardResponse[]> result = rest.exchange(post(uri("/onramp/v1/roads/rejecting_road/messages"))
+    ResponseEntity<StandardResponse[]> result = rest.exchange(post(uri("/onramp/v2/roads/rejecting_road/messages"))
         .header(AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString("user:pass".getBytes(UTF_8)))
         .contentType(APPLICATION_JSON_UTF8)
-        .body("[{\"field\":\"THIS_SHOULD_BE_BOOLEAN\"}]"), StandardResponse[].class);
+        .body("[{\"key\":null,\"value\":{\"field\":\"THIS_SHOULD_BE_BOOLEAN\"}}]"), StandardResponse[].class);
 
     assertThat(result.getStatusCode(), is(HttpStatus.OK));
     StandardResponse[] body = result.getBody();
     assertThat(body.length, is(1));
-    assertThat(body[0].isSuccess(), is(false));
     assertThat(body[0].getMessage(), is("The event failed validation. Cannot convert field field"));
+    assertThat(body[0].isSuccess(), is(false));
   }
 
   private URI uri(String path) throws URISyntaxException {

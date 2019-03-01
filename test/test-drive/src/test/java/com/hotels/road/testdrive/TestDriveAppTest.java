@@ -21,6 +21,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.springframework.boot.Banner.Mode.OFF;
 
@@ -29,6 +30,7 @@ import static com.hotels.road.rest.model.Sensitivity.PUBLIC;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.avro.Schema;
@@ -37,6 +39,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.reactivestreams.Publisher;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 
@@ -47,6 +50,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import com.hotels.road.client.OnrampMessage;
 import com.hotels.road.client.OnrampOptions;
 import com.hotels.road.client.RoadClient;
 import com.hotels.road.client.simple.SimpleRoadClient;
@@ -107,37 +111,25 @@ public class TestDriveAppTest {
     paver.addSchema(ROAD_NAME, 1, schema);
     assertThat(paver.getLatestSchema(ROAD_NAME), is(schema));
 
-    ObjectNode payload = mapper.createObjectNode().put("id", 0);
+    JsonNode payload = mapper.createObjectNode().put("id", 0);
     OnrampOptions onOptions = onrampOptions();
-    try (RoadClient<JsonNode> onrampV1 = new SimpleRoadClient<>(onOptions, "1")) {
-      StandardResponse response = onrampV1.sendMessage(payload);
-      assertThat(response.isSuccess(), is(true));
-    }
-
     OfframpOptions<JsonNode> offOptions = offrampOptions();
 
-    try (OfframpClient<JsonNode> offramp = OfframpClient.create(offOptions)) {
-      Message<JsonNode> message = Flux.from(offramp.messages()).blockFirst();
-      assertThat(message.getPartition(), is(0));
-      assertThat(message.getOffset(), is(0L));
-      assertThat(message.getSchema(), is(1));
-      assertThat(message.getPayload(), is(payload));
-    }
+    OnrampMessage<JsonNode> messageV2 = new OnrampMessage("key1", payload);
 
-    OnMessage messageV2 = new OnMessage("key1", payload);
-    JsonNode messageV2JsonNode = mapper.valueToTree(messageV2);
-
-    try (RoadClient<JsonNode> onrampV2 = new SimpleRoadClient<>(onOptions, "2")) {
-      StandardResponse response = onrampV2.sendMessage(messageV2JsonNode);
-      assertThat(response.isSuccess(), is(true));
+    try (RoadClient<JsonNode> onrampV2 = new SimpleRoadClient<>(onOptions)) {
+      StandardResponse response2 = onrampV2.send(messageV2);
+      assertThat(response2.getMessage(), is("Message accepted."));
+      assertThat(response2.isSuccess(), is(true));
     }
 
     try (OfframpClient<JsonNode> offramp = OfframpClient.create(offOptions)) {
-      Message<JsonNode> message = Flux.from(offramp.messages()).blockFirst();
-      assertThat(message.getPartition(), is(0));
-      assertThat(message.getOffset(), is(1L));
-      assertThat(message.getSchema(), is(1));
-      assertThat(message.getPayload(), is(payload));
+      Message<JsonNode> message2 = Flux.from(offramp.messages()).blockFirst();
+      assertThat(message2.getPartition(), is(0));
+      assertThat(message2.getOffset(), is(0L));
+      assertThat(message2.getSchema(), is(1));
+      assertThat(message2.getKey(), is("key1"));
+      assertThat(message2.getPayload(), is(payload));
     }
   }
 
@@ -156,7 +148,7 @@ public class TestDriveAppTest {
 
     JsonNode payload = mapper.createObjectNode().set("id", NullNode.getInstance());
     OnrampOptions onOptions = onrampOptions();
-    try (RoadClient<JsonNode> onramp = new SimpleRoadClient<>(onOptions, "2")) {
+    try (RoadClient<JsonNode> onramp = new SimpleRoadClient<>(onOptions)) {
       StandardResponse response = onramp.sendMessage(payload);
       assertThat(response.isSuccess(), is(false));
     }

@@ -104,7 +104,7 @@ public class PartitionerFactoryTest {
   public void simpleWireMockTest() throws Exception {
     stubFor(get(urlEqualTo("/paver/v1/roads/test_road"))
         .willReturn(aResponse().withStatus(HttpStatus.SC_OK).withBody("{}")));
-    stubFor(post(urlEqualTo("/onramp/v1/roads/test_road/messages"))
+    stubFor(post(urlEqualTo("/onramp/v2/roads/test_road/messages"))
         .willReturn(aResponse().withStatus(HttpStatus.SC_OK).withBody(createStubResponse(3, true, "accepted: "))));
 
     String host = "localhost:" + wireMockRule.httpsPort();
@@ -125,8 +125,8 @@ public class PartitionerFactoryTest {
       assertThat(response.getMessage(), is("accepted: 0"));
     }
 
-    verify(postRequestedFor(urlEqualTo("/onramp/v1/roads/test_road/messages"))
-        .withRequestBody(equalTo("[{\"data\":\"foo\"}]")));
+    verify(postRequestedFor(urlEqualTo("/onramp/v2/roads/test_road/messages"))
+        .withRequestBody(equalTo("[{\"key\":null,\"value\":{\"data\":\"foo\"}}]")));
   }
 
   @Data

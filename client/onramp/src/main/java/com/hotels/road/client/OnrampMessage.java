@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hotels.road.onramp.api;
+package com.hotels.road.client;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 @Value
-public class OnMessage {
-
+@RequiredArgsConstructor
+public class OnrampMessage<T> {
   String key;
-  ObjectNode value;
+  T value;
+
+  public OnrampMessage(T value) {
+    this(null, value);
+  }
 }

@@ -12,12 +12,6 @@
   <description>Classes and enums for REST API models</description>
 
   <dependencies>
-    <!-- <dependency>
-      <groupId>com.hotels.road</groupId>
-      <artifactId>road-model-core</artifactId>
-      <version>${project.version}</version>
-    </dependency> -->
-
     <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro</artifactId>

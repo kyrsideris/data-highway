@@ -135,7 +135,7 @@ public class OnrampControllerTest {
 
   Future<Boolean> mockSend(InvocationOnMock a) {
     OnMessage onMessage = a.getArgument(0);
-    if (onMessage.getMessage().get("valid").asBoolean()) {
+    if (onMessage.getValue().get("valid").asBoolean()) {
       return immediateFuture(true);
     } else {
       return immediateFailedFuture(new InvalidEventException(INVALID_EVENT_DETAIL));
@@ -160,7 +160,7 @@ public class OnrampControllerTest {
     mockMvc
         .perform(
             post(NON_EXISTENT_ROAD_URI_2)
-                .content("[{\"key\":null,\"message\":{}}]")
+                .content("[{\"key\":null,\"value\":{}}]")
                 .contentType(APPLICATION_JSON_UTF8))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.message", is(String.format("Road \"%s\" does not exist.", NON_EXISTENT_ROAD))))
@@ -193,7 +193,7 @@ public class OnrampControllerTest {
                 .content(
                     "[{\n"
                         + "  \"key\": \"effort\",\n"
-                        + "  \"message\": {\n"
+                        + "  \"value\": {\n"
                         + "    \"valid\": true\n"
                         + "  }\n"
                         + "}]")
@@ -214,7 +214,7 @@ public class OnrampControllerTest {
                     "[{\n"
                         + "  \"partition\": 1,\n"
                         + "  \"key\": \"effort\",\n"
-                        + "  \"message\": {\n"
+                        + "  \"value\": {\n"
                         + "    \"valid\": true\n"
                         + "  }\n"
                         + "}]")
@@ -232,9 +232,9 @@ public class OnrampControllerTest {
         .perform(
             post(PRESENT_ROAD_URI_2)
                 .content(
-                    "[{ \"key\": \"effortless\", \"message\": { \"valid\": true } },"
-                        + "{ \"key\": \"effort\", \"message\": { \"valid\": false }, \"partition\": 1 },"
-                        + "{ \"key\": \"effortless\", \"message\": { \"valid\": true } }]")
+                    "[{ \"key\": \"effortless\", \"value\": { \"valid\": true } },"
+                        + "{ \"key\": \"effort\", \"value\": { \"valid\": false }, \"partition\": 1 },"
+                        + "{ \"key\": \"effortless\", \"value\": { \"valid\": true } }]")
                 .contentType(APPLICATION_JSON_UTF8))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].message", is("Message accepted.")))
@@ -275,7 +275,7 @@ public class OnrampControllerTest {
     mockMvc
         .perform(
             post(CLOSED_ROAD_URI_2)
-                .content("[{\"key\": \"effort\", \"message\": {\"valid\": true}}]")
+                .content("[{\"key\": \"effort\", \"value\": {\"valid\": true}}]")
                 .contentType(APPLICATION_JSON_UTF8))
         .andExpect(status().isUnprocessableEntity())
         .andExpect(jsonPath("$.message", is("Road 'closed_road' is disabled, could not send events.")))

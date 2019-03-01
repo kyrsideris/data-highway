@@ -64,7 +64,7 @@ public class UserAgentMetricFilterTest {
 
   @Test
   public void testName() throws Exception {
-    when(request.getRequestURI()).thenReturn("/onramp/v1/roads/road1/messages");
+    when(request.getRequestURI()).thenReturn("/onramp/v2/roads/road1/messages");
     when(request.getHeader("User-Agent")).thenReturn("product1/1.0 product2/2.0 product3/3.0");
     Set<String> products = new HashSet<>(Arrays.asList("product1", "product2", "product4"));
     Filter underTest = new UserAgentMetricFilter(registry, products);

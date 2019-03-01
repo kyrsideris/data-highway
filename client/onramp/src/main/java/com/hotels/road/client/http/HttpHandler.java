@@ -89,36 +89,13 @@ public class HttpHandler implements AutoCloseable {
   }
 
   public static HttpHandler paver(OnrampOptions options) {
-    return paver(options, PaverVersion.PAVER_1);
-  }
-
-  public static HttpHandler paver(OnrampOptions options, String version) {
-    return paver(options, PaverVersion.fromStringStrict(version));
-  }
-
-  public static HttpHandler paver(OnrampOptions options, PaverVersion version) {
-    String versionString = version.toApiVersion();
-    if (versionString != null){
-      return new HttpHandler(createUri(options.getHost(), "paver", versionString), options);
-    }
-    return null;
+    String versionString = PaverVersion.PAVER_1.toApiVersion();
+    return new HttpHandler(createUri(options.getHost(), "paver", versionString), options);
   }
 
   public static HttpHandler onramp(OnrampOptions options) {
-    return onramp(options, OnrampVersion.ONRAMP_1);
-  }
-
-  public static HttpHandler onramp(OnrampOptions options, String version) throws IllegalArgumentException {
-    return onramp(options, OnrampVersion.fromStringStrict(version));
-  }
-
-  public static HttpHandler onramp(OnrampOptions options, OnrampVersion version) {
-
-    String versionString = version.toApiVersion();
-    if (versionString != null){
-      return new HttpHandler(createUri(options.getHost(), "onramp", versionString), options);
-    }
-    return null;
+    String versionString = OnrampVersion.ONRAMP_2.toApiVersion();
+    return new HttpHandler(createUri(options.getHost(), "onramp", versionString), options);
   }
 
   private static URI createUri(String host, String app, String version) {

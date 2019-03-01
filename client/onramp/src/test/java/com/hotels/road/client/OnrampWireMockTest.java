@@ -48,7 +48,7 @@ public class OnrampWireMockTest {
   @Test
   public void postMessage() throws Exception {
     String stubResponse = "[{\"timestamp\": 123, \"success\": true, \"message\": \"accepted\"}]";
-    stubFor(post(urlEqualTo("/onramp/v1/roads/a5/messages")).withBasicAuth("user", "pass").willReturn(
+    stubFor(post(urlEqualTo("/onramp/v2/roads/a5/messages")).withBasicAuth("user", "pass").willReturn(
         aResponse().withStatus(200).withBody(stubResponse)));
     try (RoadClient<SimpleModel> client = new SimpleRoadClient<>(wireMockHostPort, "user", "pass", "a5", 1,
         TLSConfig.trustAll())) {

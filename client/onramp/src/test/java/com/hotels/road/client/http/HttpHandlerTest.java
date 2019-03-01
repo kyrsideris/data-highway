@@ -106,72 +106,10 @@ public class HttpHandlerTest {
   }
 
   @Test
-  public void paverWithEnum() throws Exception  {
-    HttpHandler handler = HttpHandler.paver(options.withHost("host"), PaverVersion.PAVER_1);
-
-    assertThat(handler.getUrl(), is(URI.create("https://host/paver/v1/")));
-  }
-
-  @Test
-  public void paverWithWrongEnum() throws Exception  {
-    HttpHandler handler = HttpHandler.paver(options.withHost("host"), PaverVersion.UNKNOWN);
-
-    assertNull(handler);
-  }
-
-  @Test
-  public void paverWithString() throws Exception  {
-    HttpHandler handler = HttpHandler.paver(options.withHost("host"), "1");
-
-    assertThat(handler.getUrl(), is(URI.create("https://host/paver/v1/")));
-  }
-
-  @Test
-  public void paverWithWrongString() throws Exception  {
-    try {
-      HttpHandler.paver(options.withHost("host"), "0");
-      fail("Should throw exception when creating HttpHandler with wrong onramp version");
-    } catch (Exception e) {
-      assertThat(e.getMessage(), is("Unknown version \"0\" was used"));
-    }
-  }
-
-  @Test
   public void onramp() throws Exception  {
     HttpHandler handler = HttpHandler.onramp(options);
 
-    assertThat(handler.getUrl(), is(URI.create("https://host/onramp/v1/")));
-  }
-
-  @Test
-  public void onrampWithEnum() throws Exception  {
-    HttpHandler handler = HttpHandler.onramp(options.withHost("host"), OnrampVersion.ONRAMP_1);
-
-    assertThat(handler.getUrl(), is(URI.create("https://host/onramp/v1/")));
-  }
-
-  @Test
-  public void onrampWithWrongEnum() throws Exception  {
-    HttpHandler handler = HttpHandler.onramp(options.withHost("host"), OnrampVersion.UNKNOWN);
-
-    assertNull(handler);
-  }
-
-  @Test
-  public void onrampWithString() throws Exception  {
-    HttpHandler handler = HttpHandler.onramp(options.withHost("host"), "1");
-
-    assertThat(handler.getUrl(), is(URI.create("https://host/onramp/v1/")));
-  }
-
-  @Test
-  public void onrampWithWrongString() throws Exception {
-    try {
-      HttpHandler.onramp(options.withHost("host"), "0");
-      fail("Should throw exception when creating HttpHandler with wrong onramp version");
-    } catch (Exception e) {
-      assertThat(e.getMessage(), is("Unknown version \"0\" was used"));
-    }
+    assertThat(handler.getUrl(), is(URI.create("https://host/onramp/v2/")));
   }
 
   @Test

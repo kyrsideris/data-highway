@@ -15,16 +15,28 @@
  */
 package com.hotels.road.client;
 
-import static java.util.stream.Collectors.toList;
-
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.hotels.road.rest.model.StandardResponse;
 
 public interface RoadClient<T> extends AutoCloseable {
-  StandardResponse sendMessage(T message);
-
-  default List<StandardResponse> sendMessages(List<T> messages) {
-    return messages.stream().map(this::sendMessage).collect(toList());
+  @Deprecated
+  /** @deprecated Use {@link #send(OnrampMessage<T> message)} */
+  default StandardResponse sendMessage(T message) {
+    return send(new OnrampMessage<>(message));
   }
+
+  @Deprecated
+  /** @deprecated Use {@link #send(List<OnrampMessage<T>> messages)} */
+  default List<StandardResponse> sendMessages(List<T> messages) {
+    return send(messages.stream().map(OnrampMessage::new).collect(Collectors.toList()));
+  }
+
+  default StandardResponse send(OnrampMessage<T> message) {
+    return send(Collections.singletonList(message)).get(0);
+  }
+
+  List<StandardResponse> send(List<OnrampMessage<T>> messages);
 }

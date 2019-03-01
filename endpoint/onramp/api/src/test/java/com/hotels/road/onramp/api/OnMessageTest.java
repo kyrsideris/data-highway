@@ -34,27 +34,27 @@ public class OnMessageTest {
   public void serialisation_test() throws Exception {
     OnMessage onMessage = mapper.readValue(getJsonText(key, msg), OnMessage.class);
     assertThat(onMessage.getKey(), is(key));
-    assertThat(onMessage.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
+    assertThat(onMessage.getValue(), is(mapper.createObjectNode().put("name", "message_123")));
   }
 
   @Test
   public void with_null_key() throws Exception {
     OnMessage onMessage = mapper.readValue(getJsonText(null, msg), OnMessage.class);
     assertThat(onMessage.getKey(), is(nullValue()));
-    assertThat(onMessage.getMessage(), is(mapper.createObjectNode().put("name", "message_123")));
+    assertThat(onMessage.getValue(), is(mapper.createObjectNode().put("name", "message_123")));
   }
 
   @Test
   public void with_null_message() throws Exception {
     OnMessage onMessage = mapper.readValue(getJsonText(key, null), OnMessage.class);
     assertThat(onMessage.getKey(), is(key));
-    assertThat(onMessage.getMessage(), is(nullValue()));
+    assertThat(onMessage.getValue(), is(nullValue()));
   }
 
   private String getJsonText(String key, String message) {
     return "{\n"
         + "  \"key\": " + (key == null ? "null" : "\"" + key + "\"") + ",\n"
-        + "  \"message\": " + message + "\n"
+        + "  \"value\": " + message + "\n"
         + "}";
   }
 }

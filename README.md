@@ -86,9 +86,9 @@ curl -sk \
   -X POST \
   -H "Content-Type: application/json" \
   -d '{
-  "type" : "record",
-  "name" : "my_record",
-  "fields" : [
+  "type": "record",
+  "name": "my_record",
+  "fields": [
     {"name":"foo","type":"string"},
     {"name":"bar","type":"string"}
   ]
@@ -101,8 +101,16 @@ curl -sk \
 curl -sk \
   -u user\
   -H "Content-Type: application/json" \
-  -d '[{"foo":"foo1","bar":"bar1"}]' \
-  https://localhost:8080/onramp/v1/roads/my_road/messages
+  -d '[
+  {
+    "key": "boo1",
+    "message": { "foo": "foo1", "bar": "bar1" }
+  },
+  {
+    "key": "boo2",
+    "message": { "foo": "foo2", "bar": "bar2" }
+  }
+]' https://localhost:8080/onramp/v2/roads/my_road/messages
 ```
 
 ### Consume messages

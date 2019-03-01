@@ -103,7 +103,7 @@ public class KafkaRoadConsumer implements RoadConsumer {
   @Override
   public Iterable<Record> poll() {
     return StreamSupport
-        .stream(consumer.poll(pollTimeoutMillis).spliterator(), true)
+        .stream(consumer.poll(pollTimeoutMillis).spliterator(), false)
         .map(r -> {
               String key = r.key();
               Payload<byte[]> p = r.value();
