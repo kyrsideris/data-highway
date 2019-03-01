@@ -18,6 +18,7 @@ package com.hotels.road.offramp.kafka;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import static lombok.AccessLevel.PACKAGE;
@@ -27,13 +28,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.apache.avro.Schema;
 import org.apache.kafka.clients.consumer.CommitFailedException;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -103,16 +104,18 @@ public class KafkaRoadConsumer implements RoadConsumer {
   @Override
   public Iterable<Record> poll() {
     return StreamSupport
-        .stream(consumer.poll(pollTimeoutMillis).spliterator(), true)
-        .map(r -> {
-              String key = r.key();
-              Payload<byte[]> p = r.value();
-              Schema schema = schemaProvider.schema(roadName, p.getSchemaVersion());
-              JsonNode message = payloadDecoder.decode(schema, p.getMessage());
-              Payload<JsonNode> payload = new Payload<>(p.getFormatVersion(), p.getSchemaVersion(), message);
-              return new Record(r.partition(), r.offset(), r.timestamp(), key, payload);
-        })
-        .collect(Collectors.toList());
+        .stream(consumer.poll(pollTimeoutMillis).spliterator(), false)
+        .map(this::toRecord)
+        .collect(toList());
+  }
+
+  private Record toRecord(ConsumerRecord<String, Payload<byte[]>> record) {
+    String key = record.key();
+    Payload<byte[]> p = record.value();
+    Schema schema = schemaProvider.schema(roadName, p.getSchemaVersion());
+    JsonNode message = payloadDecoder.decode(schema, p.getMessage());
+    Payload<JsonNode> payload = new Payload<>(p.getFormatVersion(), p.getSchemaVersion(), message);
+    return new Record(record.partition(), record.offset(), record.timestamp(), key, payload);
   }
 
   @Override
